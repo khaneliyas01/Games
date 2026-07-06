@@ -212,8 +212,19 @@
     }
     @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+    #passage-display {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
     /* Characters */
-    .char { transition: color 50ms ease; }
+    .char {
+      display: inline;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      transition: color 50ms ease;
+    }
     .char--correct { color: #a0a0b8; }
     .char--incorrect { color: #EF4444; background: rgba(239,68,68,0.15); border-radius: 2px; }
     .char--current {
@@ -235,6 +246,8 @@
     .char--space-error {
       background: rgba(239,68,68,0.25);
       border-radius: 2px;
+      display: inline-block;
+      width: 0.6em;
     }
 
     @keyframes blink-caret {
@@ -599,8 +612,14 @@
         }
         if (i === cursorPos && !finished) cls += ' char--current';
 
-        const display = ch === ' ' ? ' ' : ch.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        html += `<span class="${cls}">${display}</span>`;
+        if (ch === ' ') {
+          // Use non-breaking space inside span so it has width/height for error styling,
+          // but place a normal space outside so the browser can wrap lines correctly.
+          html += `<span class="${cls}">&nbsp;</span> `;
+        } else {
+          const display = ch.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          html += `<span class="${cls}">${display}</span>`;
+        }
       }
       passageDisplay.innerHTML = html;
     }
