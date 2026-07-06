@@ -10,7 +10,7 @@ This is a static minigames website hosted at `eliyas.xyz/games`. Each game is a 
 3. **Each game is self-contained** in its own subdirectory under `Games/`. Do not create cross-game dependencies.
 4. **Always update the games registry** in `script.js` when adding or modifying a game. Set `status: 'playable'` when the game is complete.
 5. **Follow the dark theme.** Background: `#0a0a0f`, text: `#f0f0f5`, fonts: Outfit (headings) + Inter (body).
-6. **Include a back link** (`<a href="/games/">← Back to Games</a>`) on every game page.
+6. **Include a back link** (`<a href="https://games.eliyas.xyz">← Back to Games</a>`) on every game page.
 7. **Update `README.md`** status table when a game status changes.
 8. **Be responsive.** All pages must work at 320px viewport width minimum.
 9. **Use `requestAnimationFrame`** for game loops, not `setInterval`.
