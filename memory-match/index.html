@@ -3,35 +3,493 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Memory Match — Card-flipping memory game. Coming soon to Eliyas Games.">
+  <meta name="description" content="Memory Match — Flip cards to find matching pairs. Free browser game on Eliyas Games.">
   <title>Memory Match — Eliyas Games</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700;900&display=swap');
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #f0f0f5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
-    .glow { position: fixed; width: 400px; height: 400px; border-radius: 50%; filter: blur(120px); opacity: 0.2; pointer-events: none; }
-    .glow--1 { background: #EC4899; top: -100px; left: -100px; }
-    .glow--2 { background: #831843; bottom: -100px; right: -100px; }
-    .content { position: relative; z-index: 1; }
-    .emoji { font-size: 5rem; margin-bottom: 1.5rem; animation: bounce 2s ease-in-out infinite; }
-    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-    h1 { font-family: 'Outfit', sans-serif; font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; margin-bottom: 0.5rem; }
-    .badge { display: inline-block; padding: 0.3rem 1rem; border-radius: 50px; background: rgba(236, 72, 153, 0.15); color: #EC4899; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem; }
-    p { color: #a0a0b8; max-width: 400px; line-height: 1.7; margin-bottom: 2rem; }
-    .back-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 12px; background: linear-gradient(135deg, #8B5CF6, #06B6D4); color: #fff; font-weight: 600; text-decoration: none; transition: transform 150ms ease, box-shadow 150ms ease; }
-    .back-link:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3); }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    /* --- Ambient Glow --- */
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #EC4899; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #8B5CF6; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(25px, -20px) scale(1.1); } }
+
+    /* --- Back Link --- */
+    .back-link {
+      position: fixed; top: 1.25rem; left: 1.25rem;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1rem; border-radius: 10px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8; font-size: 0.85rem; font-weight: 500;
+      text-decoration: none; transition: all 200ms ease; z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.1); }
+
+    /* --- Layout Container --- */
+    .container {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh;
+      padding: 5rem 1.5rem 2rem; gap: 1.5rem;
+      max-width: 650px; width: 100%;
+    }
+
+    /* --- Header --- */
+    .header {
+      text-align: center; width: 100%;
+    }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header p { color: #6b6b80; font-size: 0.9rem; margin-top: 0.25rem; }
+
+    /* --- Difficulty Bar --- */
+    .difficulty-bar {
+      display: flex; gap: 0.5rem; border-radius: 10px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);
+    }
+    .diff-btn {
+      padding: 0.5rem 1rem; border: none; background: transparent;
+      color: #a0a0b8; font-family: 'Inter', sans-serif; font-size: 0.8rem;
+      font-weight: 600; cursor: pointer; transition: all 150ms ease;
+    }
+    .diff-btn:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.06); }
+    .diff-btn:hover { background: rgba(255,255,255,0.05); color: #f0f0f5; }
+    .diff-btn.active {
+      background: linear-gradient(135deg, rgba(236,72,153,0.25), rgba(139,92,246,0.25));
+      color: #f0f0f5;
+    }
+
+    /* --- Stats Bar --- */
+    .stats-bar {
+      display: flex; gap: 1rem; justify-content: center; width: 100%;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.5rem 1rem; border-radius: 12px; text-align: center; flex: 1; min-width: 80px;
+    }
+    .stat-card__label { font-size: 0.65rem; color: #6b6b80; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .stat-card__val { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800; color: #f0f0f5; }
+
+    /* --- Card Board --- */
+    .board-wrapper {
+      position: relative; width: 100%; aspect-ratio: 1/1; max-height: 480px; max-width: 480px;
+    }
+
+    .grid {
+      display: grid; width: 100%; height: 100%; gap: 10px;
+    }
+
+    /* Grid Layout sizes dynamically set via JS class modifiers */
+    .grid--easy { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); }
+    .grid--medium { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 1fr); }
+    .grid--hard { grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr); }
+
+    /* --- Card Flip Design --- */
+    .card {
+      position: relative; perspective: 600px; cursor: pointer; height: 100%; width: 100%;
+    }
+    .card-inner {
+      position: relative; width: 100%; height: 100%;
+      transform-style: preserve-3d; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card.matched {
+      cursor: default; pointer-events: none;
+    }
+    .card.matched .card-inner {
+      transform: rotateY(180deg);
+      animation: pulseMatch 0.5s ease-out;
+    }
+
+    @keyframes pulseMatch {
+      0% { transform: rotateY(180deg) scale(1); }
+      50% { transform: rotateY(180deg) scale(1.08); box-shadow: 0 0 20px rgba(236,72,153,0.4); }
+      100% { transform: rotateY(180deg) scale(1); }
+    }
+
+    .card-face {
+      position: absolute; inset: 0; border-radius: 12px;
+      backface-visibility: hidden; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* Card Back (Hidden state) */
+    .card-back {
+      background: linear-gradient(135deg, #12121a, #1a1a2e);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: rgba(236, 72, 153, 0.4);
+      font-size: 1.5rem;
+    }
+    .card-back::before {
+      content: '🎨';
+      transition: transform 0.3s ease;
+    }
+    .card:hover .card-back::before {
+      transform: scale(1.15) rotate(5deg);
+    }
+
+    /* Card Front (Revealed state) */
+    .card-front {
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(236, 72, 153, 0.35);
+      transform: rotateY(180deg);
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+    }
+
+    .card.matched .card-front {
+      border-color: rgba(16, 185, 129, 0.35);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    /* --- Victory Overlay --- */
+    .overlay {
+      position: absolute; inset: -4px; border-radius: 20px;
+      background: rgba(10,10,15,0.92); backdrop-filter: blur(12px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1.5rem; opacity: 0; visibility: hidden; transition: all 300ms ease; z-index: 10;
+      border: 1px solid rgba(255,255,255,0.08); padding: 2rem; text-align: center;
+    }
+    .overlay.visible { opacity: 1; visibility: visible; }
+    .overlay__emoji { font-size: 4rem; animation: floatEmoji 2s ease-in-out infinite; }
+    .overlay__title { font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: #EC4899; }
+    .overlay__text { color: #a0a0b8; font-size: 0.95rem; max-width: 320px; line-height: 1.6; }
+
+    @keyframes floatEmoji { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    /* Buttons */
+    .actions { display: flex; gap: 1rem; width: 100%; justify-content: center; }
+    .btn {
+      padding: 0.75rem 2rem; border-radius: 12px; border: none;
+      font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: all 150ms ease;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #EC4899, #8B5CF6); color: #fff;
+      box-shadow: 0 4px 16px rgba(236,72,153,0.3);
+    }
+    .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236,72,153,0.45); }
+    .btn--secondary {
+      background: rgba(255,255,255,0.05); color: #a0a0b8; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn--secondary:hover { color: #f0f0f5; background: rgba(255,255,255,0.08); }
+
+    .help-hint {
+      text-align: center; color: #6b6b80; font-size: 0.8rem;
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 4rem 1rem 1.5rem; gap: 1rem; }
+      .board-wrapper { max-height: 380px; max-width: 380px; }
+      .grid { gap: 6px; }
+      .card-face { border-radius: 8px; }
+      .card-back { font-size: 1rem; }
+      .overlay { padding: 1.5rem; }
+      .overlay__title { font-size: 1.8rem; }
+    }
   </style>
 </head>
 <body>
   <div class="glow glow--1"></div>
   <div class="glow glow--2"></div>
-  <div class="content">
-    <div class="emoji">🎨</div>
-    <h1>Memory Match</h1>
-    <span class="badge">Coming Soon</span>
-    <p>Flip cards to find matching pairs. Test your memory with increasing difficulty levels. Currently under development.</p>
-    <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Memory Match</h1>
+      <p>Find all matching pairs of cards</p>
+    </header>
+
+    <!-- Difficulty Settings -->
+    <div class="difficulty-bar" id="difficulty-bar">
+      <button class="diff-btn active" data-difficulty="easy">Easy (4x4)</button>
+      <button class="diff-btn" data-difficulty="medium">Medium (6x4)</button>
+      <button class="diff-btn" data-difficulty="hard">Hard (6x6)</button>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-card__label">Moves</div>
+        <div class="stat-card__val" id="moves-count">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Time</div>
+        <div class="stat-card__val" id="timer-val">0s</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Accuracy</div>
+        <div class="stat-card__val" id="accuracy-val">100%</div>
+      </div>
+    </div>
+
+    <!-- Board -->
+    <div class="board-wrapper">
+      <div class="grid grid--easy" id="board-grid"></div>
+
+      <!-- Victory Screen -->
+      <div class="overlay" id="victory-overlay">
+        <div class="overlay__emoji">🎉</div>
+        <div class="overlay__title">Victory!</div>
+        <div class="overlay__text" id="victory-stats">You solved the matching board!</div>
+        <div class="actions">
+          <button class="btn btn--primary" id="restart-btn">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="help-hint">
+      Tap/Click on any card to flip it over. Find all the matching pairs with as few moves as possible!
+    </div>
   </div>
+
+  <script>
+    // ─── Emojis Database ─────────────────────────────────────────────────────────
+    const EMOJIS = [
+      '🎨', '🚀', '🔮', '👽', '🦄', '🍿', '🎸', '🎮',
+      '🍕', '🍩', '🥑', '🦊', '🐼', '🐯', '🐙', '🦖',
+      '🌈', '⚡', '🔥', '💎', '🍀', '🎯', '⛵', '🧁',
+      '🍍', '🍉', '🧩', '🎨', '🧠', '🎈', '👻', '👑'
+    ];
+
+    // ─── Sound System (Synthesizer via Web Audio API) ───────────────────────────
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'flip') {
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } else if (type === 'match') {
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.08); // A5
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } else if (type === 'wrong') {
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.25);
+      } else if (type === 'victory') {
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const oscN = audioCtx.createOscillator();
+          const gainN = audioCtx.createGain();
+          oscN.connect(gainN);
+          gainN.connect(audioCtx.destination);
+          oscN.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.1);
+          gainN.gain.setValueAtTime(0.1, audioCtx.currentTime + idx * 0.1);
+          gainN.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.1 + 0.3);
+          oscN.start(audioCtx.currentTime + idx * 0.1);
+          oscN.stop(audioCtx.currentTime + idx * 0.1 + 0.3);
+        });
+      }
+    }
+
+    // ─── Game State ─────────────────────────────────────────────────────────────
+    let cards = [];
+    let flippedCards = [];
+    let moves = 0;
+    let successfulMatches = 0;
+    let difficulty = 'easy'; // easy, medium, hard
+    let timer = 0;
+    let timerInterval = null;
+    let gameStarted = false;
+
+    const boardGrid = document.getElementById('board-grid');
+    const movesCountEl = document.getElementById('moves-count');
+    const timerValEl = document.getElementById('timer-val');
+    const accuracyValEl = document.getElementById('accuracy-val');
+    const victoryOverlay = document.getElementById('victory-overlay');
+    const victoryStatsEl = document.getElementById('victory-stats');
+    const difficultyBar = document.getElementById('difficulty-bar');
+    const restartBtn = document.getElementById('restart-btn');
+
+    const config = {
+      easy: { r: 4, c: 4, pairs: 8, gridClass: 'grid--easy' },
+      medium: { r: 6, c: 4, pairs: 12, gridClass: 'grid--medium' },
+      hard: { r: 6, c: 6, pairs: 18, gridClass: 'grid--hard' }
+    };
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timer = 0;
+      timerValEl.textContent = '0s';
+      timerInterval = setInterval(() => {
+        timer++;
+        timerValEl.textContent = `${timer}s`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+    }
+
+    function calculateAccuracy() {
+      if (moves === 0) return '100%';
+      const expectedMinMoves = successfulMatches;
+      const acc = Math.round((expectedMinMoves / moves) * 100);
+      return `${acc}%`;
+    }
+
+    function initGame() {
+      stopTimer();
+      gameStarted = false;
+      moves = 0;
+      successfulMatches = 0;
+      flippedCards = [];
+      movesCountEl.textContent = '0';
+      timerValEl.textContent = '0s';
+      accuracyValEl.textContent = '100%';
+      victoryOverlay.classList.remove('visible');
+
+      const setup = config[difficulty];
+      boardGrid.className = `grid ${setup.gridClass}`;
+      boardGrid.innerHTML = '';
+
+      // Select emoji set
+      const selectedEmojis = [...EMOJIS].sort(() => Math.random() - 0.5).slice(0, setup.pairs);
+      // Double the set to create pairs
+      const doubled = [...selectedEmojis, ...selectedEmojis];
+      // Shuffle final set
+      const shuffled = doubled.sort(() => Math.random() - 0.5);
+
+      cards = shuffled.map((emoji, index) => ({
+        id: index,
+        emoji: emoji,
+        isFlipped: false,
+        isMatched: false
+      }));
+
+      cards.forEach(card => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card';
+        cardEl.dataset.id = card.id;
+
+        cardEl.innerHTML = `
+          <div class="card-inner">
+            <div class="card-face card-back"></div>
+            <div class="card-face card-front">${card.emoji}</div>
+          </div>
+        `;
+
+        cardEl.addEventListener('click', () => handleCardFlip(card, cardEl));
+        boardGrid.appendChild(cardEl);
+      });
+    }
+
+    function handleCardFlip(card, cardEl) {
+      // Start timer on first card click
+      if (!gameStarted) {
+        gameStarted = true;
+        startTimer();
+      }
+
+      if (card.isFlipped || card.isMatched || flippedCards.length >= 2) return;
+
+      // Flip card
+      card.isFlipped = true;
+      cardEl.classList.add('flipped');
+      flippedCards.push({ card, el: cardEl });
+      playSound('flip');
+
+      if (flippedCards.length === 2) {
+        moves++;
+        movesCountEl.textContent = moves;
+
+        const first = flippedCards[0];
+        const second = flippedCards[1];
+
+        if (first.card.emoji === second.card.emoji) {
+          // It's a match!
+          first.card.isMatched = true;
+          second.card.isMatched = true;
+          first.el.classList.add('matched');
+          second.el.classList.add('matched');
+          successfulMatches++;
+          flippedCards = [];
+
+          playSound('match');
+
+          // Check Win Condition
+          if (successfulMatches === config[difficulty].pairs) {
+            stopTimer();
+            setTimeout(() => {
+              playSound('victory');
+              victoryStatsEl.innerHTML = `
+                Time taken: <strong>${timer}s</strong><br>
+                Moves made: <strong>${moves}</strong><br>
+                Flip accuracy: <strong>${calculateAccuracy()}</strong>
+              `;
+              victoryOverlay.classList.add('visible');
+            }, 500);
+          }
+        } else {
+          // No match, flip them back after a delay
+          playSound('wrong');
+          setTimeout(() => {
+            first.card.isFlipped = false;
+            second.card.isFlipped = false;
+            first.el.classList.remove('flipped');
+            second.el.classList.remove('flipped');
+            flippedCards = [];
+          }, 1000);
+        }
+
+        accuracyValEl.textContent = calculateAccuracy();
+      }
+    }
+
+    // Difficulty switch listners
+    difficultyBar.addEventListener('click', (e) => {
+      if (e.target.classList.contains('diff-btn') && !e.target.classList.contains('active')) {
+        difficultyBar.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        difficulty = e.target.dataset.difficulty;
+        initGame();
+      }
+    });
+
+    restartBtn.addEventListener('click', initGame);
+
+    // Initial load
+    initGame();
+  </script>
 </body>
 </html>

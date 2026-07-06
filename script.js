@@ -14,7 +14,7 @@ const GAMES = [
     category: 'classic',
     difficulty: 'easy',
     path: 'snake/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#10B981',
     bgGradient: 'linear-gradient(135deg, #065F46, #10B981)'
   },
@@ -26,7 +26,7 @@ const GAMES = [
     category: 'puzzle',
     difficulty: 'medium',
     path: 'tetris/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#8B5CF6',
     bgGradient: 'linear-gradient(135deg, #4C1D95, #8B5CF6)'
   },
@@ -38,7 +38,7 @@ const GAMES = [
     category: 'arcade',
     difficulty: 'easy',
     path: 'pong/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#06B6D4',
     bgGradient: 'linear-gradient(135deg, #164E63, #06B6D4)'
   },
@@ -50,7 +50,7 @@ const GAMES = [
     category: 'puzzle',
     difficulty: 'hard',
     path: 'minesweeper/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#EF4444',
     bgGradient: 'linear-gradient(135deg, #7F1D1D, #EF4444)'
   },
@@ -62,7 +62,7 @@ const GAMES = [
     category: 'puzzle',
     difficulty: 'easy',
     path: 'memory-match/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#EC4899',
     bgGradient: 'linear-gradient(135deg, #831843, #EC4899)'
   },
@@ -74,7 +74,7 @@ const GAMES = [
     category: 'puzzle',
     difficulty: 'medium',
     path: '2048/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#F59E0B',
     bgGradient: 'linear-gradient(135deg, #78350F, #F59E0B)'
   },
@@ -86,7 +86,7 @@ const GAMES = [
     category: 'classic',
     difficulty: 'easy',
     path: 'rock-paper-scissors/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#3B82F6',
     bgGradient: 'linear-gradient(135deg, #1E3A5F, #3B82F6)'
   },

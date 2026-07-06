@@ -198,13 +198,13 @@ This is a **static site** served from a web server at `games.eliyas.xyz`.
 
 | Game | Directory | Status | Category | Difficulty |
 |------|-----------|--------|----------|------------|
-| 🐍 Snake | `snake/` | 🟡 Coming Soon | Classic | Easy |
-| 🧱 Tetris | `tetris/` | 🟡 Coming Soon | Puzzle | Medium |
-| 🏓 Pong | `pong/` | 🟡 Coming Soon | Arcade | Easy |
-| 💣 Minesweeper | `minesweeper/` | 🟡 Coming Soon | Puzzle | Hard |
-| 🎨 Memory Match | `memory-match/` | 🟡 Coming Soon | Puzzle | Easy |
-| 🔢 2048 | `2048/` | 🟡 Coming Soon | Puzzle | Medium |
-| ✂️ Rock Paper Scissors | `rock-paper-scissors/` | 🟡 Coming Soon | Classic | Easy |
+| 🐍 Snake | `snake/` | 🟢 Playable | Classic | Easy |
+| 🧱 Tetris | `tetris/` | 🟢 Playable | Puzzle | Medium |
+| 🏓 Pong | `pong/` | 🟢 Playable | Arcade | Easy |
+| 💣 Minesweeper | `minesweeper/` | 🟢 Playable | Puzzle | Hard |
+| 🎨 Memory Match | `memory-match/` | 🟢 Playable | Puzzle | Easy |
+| 🔢 2048 | `2048/` | 🟢 Playable | Puzzle | Medium |
+| ✂️ Rock Paper Scissors | `rock-paper-scissors/` | 🟢 Playable | Classic | Easy |
 | ⌨️ Typing Speed | `typing-speed/` | 🟢 Playable | Skill | Medium |
 | 🎲 Roll a Dice | `roll-a-dice/` | 🟢 Playable | Luck | Easy |
 | 🪙 Flip a Coin | `flip-a-coin/` | 🟢 Playable | Luck | Easy |
