@@ -205,7 +205,7 @@ This is a **static site** served from a web server at `games.eliyas.xyz`.
 | 🎨 Memory Match | `memory-match/` | 🟡 Coming Soon | Puzzle | Easy |
 | 🔢 2048 | `2048/` | 🟡 Coming Soon | Puzzle | Medium |
 | ✂️ Rock Paper Scissors | `rock-paper-scissors/` | 🟡 Coming Soon | Classic | Easy |
-| ⌨️ Typing Speed | `typing-speed/` | 🟡 Coming Soon | Skill | Medium |
+| ⌨️ Typing Speed | `typing-speed/` | 🟢 Playable | Skill | Medium |
 | 🎲 Roll a Dice | `roll-a-dice/` | 🟢 Playable | Luck | Easy |
 | 🪙 Flip a Coin | `flip-a-coin/` | 🟢 Playable | Luck | Easy |
 | 🃏 Draw a Card | `draw-a-card/` | 🟢 Playable | Luck | Easy |

@@ -98,7 +98,7 @@ const GAMES = [
     category: 'skill',
     difficulty: 'medium',
     path: 'typing-speed/',
-    status: 'coming-soon',
+    status: 'playable',
     accentColor: '#6366F1',
     bgGradient: 'linear-gradient(135deg, #312E81, #6366F1)'
   },
