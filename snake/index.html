@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Snake — Classic snake game. Coming soon to Eliyas Games.">
+  <title>Snake — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@700;900&display=swap');
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    .glow {
+      position: fixed;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+    .glow--1 { background: #10B981; top: -100px; left: -100px; }
+    .glow--2 { background: #065F46; bottom: -100px; right: -100px; }
+    .content { position: relative; z-index: 1; }
+    .emoji { font-size: 5rem; margin-bottom: 1.5rem; animation: bounce 2s ease-in-out infinite; }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.3rem 1rem;
+      border-radius: 50px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #10B981;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    p { color: #a0a0b8; max-width: 400px; line-height: 1.7; margin-bottom: 2rem; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #8B5CF6, #06B6D4);
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+    .back-link:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+  <div class="content">
+    <div class="emoji">🐍</div>
+    <h1>Snake</h1>
+    <span class="badge">Coming Soon</span>
+    <p>Guide the snake to eat food and grow longer. Don't hit the walls or yourself! This game is currently under development.</p>
+    <a href="/games/" class="back-link">← Back to Games</a>
+  </div>
+</body>
+</html>

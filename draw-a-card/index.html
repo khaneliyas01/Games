@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Draw a Card — Draw random playing cards from a virtual deck. Free browser game on Eliyas Games.">
+  <title>Draw a Card — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #EC4899; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #6366F1; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(25px,-20px) scale(1.08); } }
+
+    .back-link {
+      position: fixed; top: 1.25rem; left: 1.25rem;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1rem; border-radius: 10px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8; font-size: 0.85rem; font-weight: 500;
+      text-decoration: none; transition: all 200ms ease; z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.1); }
+
+    .game-container {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 2rem; gap: 1.5rem;
+    }
+
+    .game-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 900; text-align: center; letter-spacing: -0.02em;
+    }
+    .game-title span {
+      background: linear-gradient(135deg, #EC4899, #6366F1);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    /* --- Card Area --- */
+    .card-stage {
+      position: relative;
+      width: 220px;
+      height: 320px;
+      perspective: 1000px;
+      margin: 0.5rem 0;
+    }
+
+    .playing-card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+
+    .playing-card.face-down { transform: rotateY(180deg); }
+    .playing-card.face-up { transform: rotateY(0deg); }
+
+    .playing-card.drawing {
+      animation: cardDraw 0.7s ease-out;
+    }
+
+    @keyframes cardDraw {
+      0%   { transform: rotateY(180deg) translateY(30px) scale(0.8); opacity: 0.5; }
+      40%  { transform: rotateY(90deg) translateY(-20px) scale(1.05); }
+      100% { transform: rotateY(0deg) translateY(0) scale(1); opacity: 1; }
+    }
+
+    .card-side {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Card Front */
+    .card-front {
+      background: linear-gradient(160deg, #ffffff, #f8f8f8);
+      border: 2px solid rgba(0,0,0,0.08);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
+      padding: 16px;
+      justify-content: space-between;
+    }
+
+    .card-corner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+    }
+
+    .card-corner-top { align-self: flex-start; }
+    .card-corner-bottom { align-self: flex-end; transform: rotate(180deg); }
+
+    .card-rank {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .card-suit-small {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .card-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      font-size: 4.5rem;
+      user-select: none;
+    }
+
+    .card-red { color: #DC2626; }
+    .card-black { color: #1a1a2e; }
+
+    /* Card Back */
+    .card-back {
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      border: 2px solid rgba(99, 102, 241, 0.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      transform: rotateY(180deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-back-pattern {
+      width: calc(100% - 24px);
+      height: calc(100% - 24px);
+      border-radius: 10px;
+      border: 2px solid rgba(99, 102, 241, 0.3);
+      background:
+        repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(99,102,241,0.08) 8px, rgba(99,102,241,0.08) 16px),
+        repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(99,102,241,0.08) 8px, rgba(99,102,241,0.08) 16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+    }
+
+    /* --- Result Text --- */
+    .result {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      min-height: 2rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 300ms ease;
+      text-align: center;
+    }
+    .result.visible { opacity: 1; transform: translateY(0); }
+
+    .deck-info {
+      font-size: 0.85rem;
+      color: #6b6b80;
+    }
+
+    /* --- Buttons --- */
+    .btn-row { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+
+    .draw-btn {
+      padding: 1rem 2.5rem; border-radius: 16px; border: none;
+      background: linear-gradient(135deg, #EC4899, #6366F1);
+      color: #fff; font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem; font-weight: 700; cursor: pointer;
+      transition: transform 150ms ease, box-shadow 150ms ease;
+      box-shadow: 0 4px 24px rgba(236, 72, 153, 0.25);
+    }
+    .draw-btn:hover { transform: scale(1.05); box-shadow: 0 6px 32px rgba(236, 72, 153, 0.35); }
+    .draw-btn:active { transform: scale(0.97); }
+    .draw-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .reset-btn {
+      padding: 1rem 2rem; border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #a0a0b8; font-family: 'Outfit', sans-serif;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: all 200ms ease;
+    }
+    .reset-btn:hover { border-color: rgba(236,72,153,0.4); color: #f0f0f5; background: rgba(236,72,153,0.1); }
+
+    /* --- Drawn Cards History --- */
+    .drawn-cards {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 500px;
+    }
+
+    .mini-card {
+      width: 42px;
+      height: 60px;
+      border-radius: 6px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 0.7rem;
+      line-height: 1;
+      gap: 1px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      animation: popIn 250ms ease-out both;
+    }
+    .mini-card .mini-suit { font-size: 0.9rem; }
+    .mini-card.red { color: #DC2626; }
+    .mini-card.black { color: #1a1a2e; }
+
+    @keyframes popIn { from { transform: scale(0) rotate(-10deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+
+    @media (max-width: 480px) {
+      .card-stage { width: 170px; height: 250px; }
+      .card-center { font-size: 3.5rem; }
+      .card-rank { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+
+  <a href="/games/" class="back-link">← Back to Games</a>
+
+  <div class="game-container">
+    <h1 class="game-title">🃏 <span>Draw a Card</span></h1>
+
+    <div class="card-stage">
+      <div class="playing-card face-down" id="playing-card">
+        <div class="card-side card-front" id="card-front">
+          <div class="card-corner card-corner-top">
+            <span class="card-rank" id="rank-top">A</span>
+            <span class="card-suit-small" id="suit-top">♠</span>
+          </div>
+          <div class="card-center" id="card-center">♠</div>
+          <div class="card-corner card-corner-bottom">
+            <span class="card-rank" id="rank-bottom">A</span>
+            <span class="card-suit-small" id="suit-bottom">♠</span>
+          </div>
+        </div>
+        <div class="card-side card-back">
+          <div class="card-back-pattern">🃏</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result" id="result">Click draw to reveal a card</div>
+    <div class="deck-info" id="deck-info">52 cards remaining</div>
+
+    <div class="btn-row">
+      <button class="draw-btn" id="draw-btn">🃏 Draw Card</button>
+      <button class="reset-btn" id="reset-btn">🔄 New Deck</button>
+    </div>
+
+    <div class="drawn-cards" id="drawn-cards"></div>
+  </div>
+
+  <script>
+    // --- Deck Setup ---
+    const SUITS = [
+      { symbol: '♠', name: 'Spades',   color: 'black' },
+      { symbol: '♥', name: 'Hearts',   color: 'red' },
+      { symbol: '♦', name: 'Diamonds', color: 'red' },
+      { symbol: '♣', name: 'Clubs',    color: 'black' },
+    ];
+    const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+    let deck = [];
+    let isDrawing = false;
+
+    function buildDeck() {
+      deck = [];
+      for (const suit of SUITS) {
+        for (const rank of RANKS) {
+          deck.push({ rank, suit: suit.symbol, suitName: suit.name, color: suit.color });
+        }
+      }
+      // Fisher-Yates shuffle
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+    }
+
+    // --- DOM ---
+    const card = document.getElementById('playing-card');
+    const cardFront = document.getElementById('card-front');
+    const drawBtn = document.getElementById('draw-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const resultEl = document.getElementById('result');
+    const deckInfoEl = document.getElementById('deck-info');
+    const drawnCardsEl = document.getElementById('drawn-cards');
+    const rankTop = document.getElementById('rank-top');
+    const suitTop = document.getElementById('suit-top');
+    const rankBottom = document.getElementById('rank-bottom');
+    const suitBottom = document.getElementById('suit-bottom');
+    const cardCenter = document.getElementById('card-center');
+
+    function rankName(rank) {
+      const names = { A: 'Ace', J: 'Jack', Q: 'Queen', K: 'King' };
+      return names[rank] || rank;
+    }
+
+    function drawCard() {
+      if (isDrawing || deck.length === 0) return;
+      isDrawing = true;
+      drawBtn.disabled = true;
+      resultEl.classList.remove('visible');
+
+      // Flip face down first
+      card.classList.remove('face-up', 'drawing');
+      card.classList.add('face-down');
+
+      const drawn = deck.pop();
+
+      // Brief pause, then reveal
+      setTimeout(() => {
+        // Update card content
+        const colorClass = drawn.color === 'red' ? 'card-red' : 'card-black';
+        cardFront.className = `card-side card-front ${colorClass}`;
+        rankTop.textContent = drawn.rank;
+        suitTop.textContent = drawn.suit;
+        rankBottom.textContent = drawn.rank;
+        suitBottom.textContent = drawn.suit;
+        cardCenter.textContent = drawn.suit;
+
+        // Animate reveal
+        card.classList.remove('face-down');
+        card.classList.add('drawing');
+
+        setTimeout(() => {
+          card.classList.remove('drawing');
+          card.classList.add('face-up');
+
+          resultEl.textContent = `${rankName(drawn.rank)} of ${drawn.suitName} ${drawn.suit}`;
+          resultEl.classList.add('visible');
+          deckInfoEl.textContent = `${deck.length} card${deck.length !== 1 ? 's' : ''} remaining`;
+
+          // Add mini card to history
+          const mini = document.createElement('div');
+          mini.className = `mini-card ${drawn.color}`;
+          mini.innerHTML = `<span class="mini-rank">${drawn.rank}</span><span class="mini-suit">${drawn.suit}</span>`;
+          drawnCardsEl.insertBefore(mini, drawnCardsEl.firstChild);
+
+          if (deck.length === 0) {
+            drawBtn.disabled = true;
+            deckInfoEl.textContent = 'Deck empty! Shuffle a new deck.';
+          } else {
+            drawBtn.disabled = false;
+          }
+          isDrawing = false;
+        }, 700);
+      }, 200);
+    }
+
+    function resetDeck() {
+      buildDeck();
+      card.classList.remove('face-up', 'drawing');
+      card.classList.add('face-down');
+      resultEl.classList.remove('visible');
+      resultEl.textContent = 'Click draw to reveal a card';
+      deckInfoEl.textContent = '52 cards remaining';
+      drawnCardsEl.innerHTML = '';
+      drawBtn.disabled = false;
+      isDrawing = false;
+    }
+
+    drawBtn.addEventListener('click', drawCard);
+    resetBtn.addEventListener('click', resetDeck);
+    card.addEventListener('click', () => {
+      if (card.classList.contains('face-down') && deck.length > 0) drawCard();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); drawCard(); }
+      if (e.code === 'KeyR') resetDeck();
+    });
+
+    // Init
+    buildDeck();
+  </script>
+</body>
+</html>
