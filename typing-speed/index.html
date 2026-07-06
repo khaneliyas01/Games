@@ -172,6 +172,8 @@
       cursor: text;
       transition: border-color 250ms ease, box-shadow 250ms ease;
       overflow: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .passage-box.focused {
@@ -597,7 +599,7 @@
         }
         if (i === cursorPos && !finished) cls += ' char--current';
 
-        const display = ch === ' ' ? '&nbsp;' : ch.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const display = ch === ' ' ? ' ' : ch.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         html += `<span class="${cls}">${display}</span>`;
       }
       passageDisplay.innerHTML = html;
