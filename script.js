@@ -1,356 +1,273 @@
-/* ============================================
-   ELIYAS.XYZ/GAMES — Interactive JavaScript
-   ============================================ */
 
-// ─── Games Registry ─────────────────────────────────────────────────────────
-// This is the central registry of all games. To add a new game, simply add
-// an entry to this array. The landing page will automatically render it.
 const GAMES = [
-  {
-    id: 'snake',
-    title: 'Snake',
-    emoji: '🐍',
-    description: 'Guide the snake to eat food and grow longer. Don\'t hit the walls or yourself!',
-    category: 'classic',
-    difficulty: 'easy',
-    path: 'snake/',
-    status: 'playable',
-    accentColor: '#10B981',
-    bgGradient: 'linear-gradient(135deg, #065F46, #10B981)'
-  },
-  {
-    id: 'tetris',
-    title: 'Tetris',
-    emoji: '🧱',
-    description: 'Stack falling blocks to complete rows. The classic puzzle game that never gets old.',
-    category: 'puzzle',
-    difficulty: 'medium',
-    path: 'tetris/',
-    status: 'playable',
-    accentColor: '#8B5CF6',
-    bgGradient: 'linear-gradient(135deg, #4C1D95, #8B5CF6)'
-  },
-  {
-    id: 'pong',
-    title: 'Pong',
-    emoji: '🏓',
-    description: 'The original video game. Battle against AI or challenge a friend in this paddle classic.',
-    category: 'arcade',
-    difficulty: 'easy',
-    path: 'pong/',
-    status: 'playable',
-    accentColor: '#06B6D4',
-    bgGradient: 'linear-gradient(135deg, #164E63, #06B6D4)'
-  },
-  {
-    id: 'minesweeper',
-    title: 'Minesweeper',
-    emoji: '💣',
-    description: 'Uncover tiles without detonating hidden mines. Use logic and a bit of luck to survive.',
-    category: 'puzzle',
-    difficulty: 'hard',
-    path: 'minesweeper/',
-    status: 'playable',
-    accentColor: '#EF4444',
-    bgGradient: 'linear-gradient(135deg, #7F1D1D, #EF4444)'
-  },
-  {
-    id: 'memory-match',
-    title: 'Memory Match',
-    emoji: '🎨',
-    description: 'Flip cards to find matching pairs. Test your memory with increasing difficulty levels.',
-    category: 'puzzle',
-    difficulty: 'easy',
-    path: 'memory-match/',
-    status: 'playable',
-    accentColor: '#EC4899',
-    bgGradient: 'linear-gradient(135deg, #831843, #EC4899)'
-  },
-  {
-    id: '2048',
-    title: '2048',
-    emoji: '🔢',
-    description: 'Slide numbered tiles on a grid to combine them and reach the 2048 tile.',
-    category: 'puzzle',
-    difficulty: 'medium',
-    path: '2048/',
-    status: 'playable',
-    accentColor: '#F59E0B',
-    bgGradient: 'linear-gradient(135deg, #78350F, #F59E0B)'
-  },
-  {
-    id: 'rock-paper-scissors',
-    title: 'Rock Paper Scissors',
-    emoji: '✂️',
-    description: 'The timeless hand game — now with slick animations and an AI opponent to beat.',
-    category: 'classic',
-    difficulty: 'easy',
-    path: 'rock-paper-scissors/',
-    status: 'playable',
-    accentColor: '#3B82F6',
-    bgGradient: 'linear-gradient(135deg, #1E3A5F, #3B82F6)'
-  },
-  {
-    id: 'typing-speed',
-    title: 'Typing Speed',
-    emoji: '⌨️',
-    description: 'How fast can you type? Test your WPM with random passages and track your progress.',
-    category: 'skill',
-    difficulty: 'medium',
-    path: 'typing-speed/',
-    status: 'playable',
-    accentColor: '#6366F1',
-    bgGradient: 'linear-gradient(135deg, #312E81, #6366F1)'
-  },
-  {
-    id: 'roll-a-dice',
-    title: 'Roll a Dice',
-    emoji: '🎲',
-    description: 'Roll a realistic 3D dice with physics animation. Track your roll history and statistics.',
-    category: 'luck',
-    difficulty: 'easy',
-    path: 'roll-a-dice/',
-    status: 'playable',
-    accentColor: '#F59E0B',
-    bgGradient: 'linear-gradient(135deg, #78350F, #F59E0B)'
-  },
-  {
-    id: 'flip-a-coin',
-    title: 'Flip a Coin',
-    emoji: '🪙',
-    description: 'Flip a shiny 3D coin and track your heads vs tails streak. Settle any debate instantly!',
-    category: 'luck',
-    difficulty: 'easy',
-    path: 'flip-a-coin/',
-    status: 'playable',
-    accentColor: '#D97706',
-    bgGradient: 'linear-gradient(135deg, #92400E, #F59E0B)'
-  },
-  {
-    id: 'draw-a-card',
-    title: 'Draw a Card',
-    emoji: '🃏',
-    description: 'Draw from a shuffled 52-card deck with slick card flip animations. What will you get?',
-    category: 'luck',
-    difficulty: 'easy',
-    path: 'draw-a-card/',
-    status: 'playable',
-    accentColor: '#EC4899',
-    bgGradient: 'linear-gradient(135deg, #831843, #EC4899)'
-  }
-];
+        { id: '2048', title: '2048', emoji: '🔢', description: 'Merge tiles and reach 2048 in this addictive puzzle.', category: 'puzzle', difficulty: 'medium', path: '2048/', accentColor: '#f97316', bgGradient: 'linear-gradient(135deg, #fff7ed, #ffedd5)' },
+        { id: 'draw-a-card', title: 'Draw a Card', emoji: '🃏', description: 'Try your luck with a random draw.', category: 'luck', difficulty: 'easy', path: 'draw-a-card/', accentColor: '#a78bfa', bgGradient: 'linear-gradient(135deg, #f5f3ff, #ede9fe)' },
+        { id: 'flappy-clone', title: 'Flappy Clone', emoji: '🐦', description: 'Tap to fly through the pipes without crashing.', category: 'arcade', difficulty: 'medium', path: 'flappy-clone/', accentColor: '#38bdf8', bgGradient: 'linear-gradient(135deg, #0f172a, #1e293b)' },
+        { id: 'flip-a-coin', title: 'Flip a Coin', emoji: '🪙', description: 'Quick heads or tails with a flick.', category: 'luck', difficulty: 'easy', path: 'flip-a-coin/', accentColor: '#fbbf24', bgGradient: 'linear-gradient(135deg, #1c1917, #292524)' },
+        { id: 'memory-match', title: 'Memory Match', emoji: '🧩', description: 'Flip cards and find matching pairs.', category: 'puzzle', difficulty: 'easy', path: 'memory-match/', accentColor: '#ec4899', bgGradient: 'linear-gradient(135deg, #fdf2f8, #fce7f3)' },
+        { id: 'minesweeper', title: 'Minesweeper', emoji: '💣', description: 'Clear the board without hitting a hidden mine.', category: 'puzzle', difficulty: 'medium', path: 'minesweeper/', accentColor: '#ef4444', bgGradient: 'linear-gradient(135deg, #0a0a0f, #1c1c24)' },
+        { id: 'pong', title: 'Pong', emoji: '🏓', description: 'Classic paddle versus paddle. Keep the ball alive.', category: 'arcade', difficulty: 'easy', path: 'pong/', accentColor: '#22c55e', bgGradient: 'linear-gradient(135deg, #022c22, #064e3b)' },
+        { id: 'rock-paper-scissors', title: 'Rock Paper Scissors', emoji: '✌️', description: 'Beat the computer in this quick duel of choices.', category: 'luck', difficulty: 'easy', path: 'rock-paper-scissors/', accentColor: '#f97316', bgGradient: 'linear-gradient(135deg, #fff1e6, #ffe4e6)' },
+        { id: 'roll-a-dice', title: 'Roll a Dice', emoji: '🎲', description: 'Roll the dice and test your fortune.', category: 'luck', difficulty: 'easy', path: 'roll-a-dice/', accentColor: '#eab308', bgGradient: 'linear-gradient(135deg, #1c1917, #292524)' },
+        { id: 'snake', title: 'Snake', emoji: '🐍', description: 'Eat, grow, and avoid your own tail.', category: 'arcade', difficulty: 'easy', path: 'snake/', accentColor: '#10b981', bgGradient: 'linear-gradient(135deg, #022c22, #064e3b)' },
+        { id: 'space-invaders', title: 'Space Invaders', emoji: '👾', description: 'Defend Earth from relentless alien invaders!', category: 'arcade', difficulty: 'medium', path: 'space-invaders/', accentColor: '#00FF00', bgGradient: 'linear-gradient(135deg, #0A0A0A, #222222)' },
+        { id: 'tetris', title: 'Tetris', emoji: '🧱', description: 'Stack blocks, clear lines, chase the high score.', category: 'arcade', difficulty: 'medium', path: 'tetris/', accentColor: '#3b82f6', bgGradient: 'linear-gradient(135deg, #0f172a, #1e293b)' },
+        { id: 'tic-tac-toe', title: 'Tic Tac Toe', emoji: '❌', description: 'Classic 3x3 strategy. Play locally or against basic AI.', category: 'puzzle', difficulty: 'easy', path: 'tic-tac-toe/', status: 'playable', accentColor: '#EC4899', bgGradient: 'linear-gradient(135deg, #1a1025, #231839)' },
+        { id: 'typing-speed', title: 'Typing Speed', emoji: '⌨️', description: 'Type fast and accurate to beat the clock.', category: 'skill', difficulty: 'easy', path: 'typing-speed/', accentColor: '#14b8a6', bgGradient: 'linear-gradient(135deg, #042f2e, #115e59)' },
+        { id: 'wordle-clone', title: 'Wordle', emoji: '🧩', description: 'Guess a 5-letter word in 6 tries.', category: 'puzzle', difficulty: 'medium', path: 'wordle-clone/', accentColor: '#EC4899', bgGradient: 'linear-gradient(135deg, #1a1025, #231839)' }
+    ];
 
-// ─── DOM Elements ────────────────────────────────────────────────────────────
-const gamesGrid = document.getElementById('games-grid');
-const searchInput = document.getElementById('search-input');
-const filterTags = document.getElementById('filter-tags');
-const gamesCount = document.getElementById('games-count');
-const noResults = document.getElementById('no-results');
-const navbar = document.getElementById('navbar');
-const canvas = document.getElementById('particle-canvas');
-const ctx = canvas.getContext('2d');
-
-// ─── State ───────────────────────────────────────────────────────────────────
-let activeFilter = 'all';
-let searchQuery = '';
-
-// ─── Render Game Cards ───────────────────────────────────────────────────────
-function createGameCard(game, index) {
-  const isPlayable = game.status === 'playable';
-  const difficultyClass = `game-card__tag--difficulty-${game.difficulty}`;
-
-  const card = document.createElement('a');
-  card.href = isPlayable ? game.path : '#';
-  card.className = 'game-card';
-  card.dataset.category = game.category;
-  card.dataset.title = game.title.toLowerCase();
-  card.style.animationDelay = `${index * 0.05}s`;
-
-  if (!isPlayable) {
-    card.addEventListener('click', (e) => e.preventDefault());
-  }
-
-  card.innerHTML = `
-    <div class="game-card__preview">
-      <div class="game-card__preview-bg" style="background: ${game.bgGradient}"></div>
-      <span class="game-card__emoji">${game.emoji}</span>
-    </div>
-    <div class="game-card__content">
-      <div class="game-card__tags">
-        <span class="game-card__tag game-card__tag--category">${game.category}</span>
-        <span class="game-card__tag ${difficultyClass}">${game.difficulty}</span>
-      </div>
-      <h3 class="game-card__title">${game.title}</h3>
-      <p class="game-card__description">${game.description}</p>
-      <div class="game-card__footer">
-        <span class="game-card__status game-card__status--${game.status}">
-          <span class="game-card__status-dot"></span>
-          ${isPlayable ? 'Playable' : 'Coming Soon'}
-        </span>
-        <span class="game-card__play-btn ${!isPlayable ? 'game-card__play-btn--disabled' : ''}">
-          ${isPlayable ? '▶ Play' : '🔒 Soon'}
-        </span>
-      </div>
-    </div>
-  `;
-
-  // 3D tilt effect on hover
-  card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -6;
-    const rotateY = ((x - centerX) / centerX) * 6;
-
-    card.style.transform = `translateY(-8px) perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-  });
-
-  card.addEventListener('mouseleave', () => {
-    card.style.transform = '';
-  });
-
-  return card;
-}
-
+// Render games on the landing page
 function renderGames() {
-  gamesGrid.innerHTML = '';
+  const grid = document.getElementById('games-grid');
+  const noResults = document.getElementById('no-results');
+  const countEl = document.getElementById('games-count');
+  const searchInput = document.getElementById('search-input');
+  const filterTags = document.querySelectorAll('.filter-tag');
+  if (!grid) return;
 
-  const filtered = GAMES.filter(game => {
-    const matchesFilter = activeFilter === 'all' || game.category === activeFilter;
-    const matchesSearch = game.title.toLowerCase().includes(searchQuery) ||
-                          game.description.toLowerCase().includes(searchQuery) ||
-                          game.category.toLowerCase().includes(searchQuery);
-    return matchesFilter && matchesSearch;
+  function matchesFilter(game, tag) {
+    if (!tag || tag === 'all') return true;
+    return game.category === tag;
+  }
+
+  function render(filterTag) {
+    const query = (searchInput?.value || '').toLowerCase().trim();
+    const filtered = GAMES.filter((g) => {
+      const matchesSearch =
+        !query ||
+        g.title.toLowerCase().includes(query) ||
+        (g.description && g.description.toLowerCase().includes(query));
+      const matchesTag = matchesFilter(g, filterTag);
+      return matchesSearch && matchesTag;
+    });
+    grid.innerHTML = filtered
+      .map(
+        (g) => `
+      <a class="game-card" href="${g.path}" style="text-decoration:none;color:inherit">
+        <div class="game-card__accent" style="background:${g.accentColor || 'rgba(255,255,255,0.08)'}"></div>
+        <div class="game-card__body">
+          <div class="game-card__top">
+            <span class="game-card__emoji">${g.emoji || '🎮'}</span>
+            <span class="game-card__difficulty">${g.difficulty || ''}</span>
+          </div>
+          <h3 class="game-card__title">${g.title}</h3>
+          <p class="game-card__desc">${g.description || ''}</p>
+          <span class="game-card__path">${g.path}</span>
+        </div>
+      </a>
+    `
+      )
+      .join('');
+    if (countEl) countEl.textContent = filtered.length + ' game' + (filtered.length === 1 ? '' : 's');
+    if (noResults) noResults.classList.toggle('visible', filtered.length === 0);
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => render(document.querySelector('.filter-tag.active')?.dataset.filter || 'all'));
+  }
+  filterTags.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filterTags.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      render(btn.dataset.filter || 'all');
+    });
   });
 
-  if (filtered.length === 0) {
-    noResults.classList.add('visible');
-  } else {
-    noResults.classList.remove('visible');
-  }
-
-  filtered.forEach((game, index) => {
-    gamesGrid.appendChild(createGameCard(game, index));
-  });
-
-  gamesCount.textContent = `${filtered.length} of ${GAMES.length} games`;
+  render('all');
 }
 
-// ─── Filter & Search Event Listeners ─────────────────────────────────────────
-filterTags.addEventListener('click', (e) => {
-  if (e.target.classList.contains('filter-tag')) {
-    document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
-    e.target.classList.add('active');
-    activeFilter = e.target.dataset.filter;
-    renderGames();
-  }
-});
+// Space Invaders Game Logic
+// This section contains the game logic for Space Invaders.
+document.addEventListener('DOMContentLoaded', () => {
+    const spaceInvadersCanvas = document.getElementById('gameCanvas');
+    if (!spaceInvadersCanvas) return; // Only run if on the Space Invaders page
 
-searchInput.addEventListener('input', (e) => {
-  searchQuery = e.target.value.toLowerCase().trim();
-  renderGames();
-});
+    const ctx = spaceInvadersCanvas.getContext('2d');
+    spaceInvadersCanvas.width = 400;
+    spaceInvadersCanvas.height = 600;
 
-// ─── Navbar Scroll Effect ────────────────────────────────────────────────────
-let lastScroll = 0;
-window.addEventListener('scroll', () => {
-  const scrollY = window.scrollY;
-  if (scrollY > 50) {
-    navbar.classList.add('scrolled');
-  } else {
-    navbar.classList.remove('scrolled');
-  }
-  lastScroll = scrollY;
-});
+    const PLAYER_SPEED = 5;
+    const BULLET_SPEED = 7;
+    const ALIEN_SPEED = 1;
+    const ALIEN_ROWS = 5;
+    const ALIEN_COLS = 10;
+    const ALIEN_X_SPACING = 30;
+    const ALIEN_Y_SPACING = 30;
+    const ALIEN_OFFSET_X = 20;
+    const ALIEN_OFFSET_Y = 30;
+    const ALIEN_SIZE = 20;
 
-// ─── Particle Canvas Animation ───────────────────────────────────────────────
-let particles = [];
-const PARTICLE_COUNT = 60;
+    let player = {
+        x: spaceInvadersCanvas.width / 2 - 15,
+        y: spaceInvadersCanvas.height - 40,
+        width: 30,
+        height: 20,
+        color: 'lime'
+    };
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
+    let bullets = [];
+    let aliens = [];
+    let alienDirection = 1; // 1 for right, -1 for left
+    let score = 0;
+    let gameOver = false;
 
-class Particle {
-  constructor() {
-    this.reset();
-  }
+    function initGame() {
+        player.x = spaceInvadersCanvas.width / 2 - 15;
+        bullets = [];
+        aliens = [];
+        alienDirection = 1;
+        score = 0;
+        gameOver = false;
 
-  reset() {
-    this.x = Math.random() * canvas.width;
-    this.y = Math.random() * canvas.height;
-    this.size = Math.random() * 2 + 0.5;
-    this.speedX = (Math.random() - 0.5) * 0.3;
-    this.speedY = (Math.random() - 0.5) * 0.3;
-    this.opacity = Math.random() * 0.4 + 0.1;
-    this.hue = Math.random() > 0.5 ? 260 : 190; // Purple or Cyan
-  }
-
-  update() {
-    this.x += this.speedX;
-    this.y += this.speedY;
-
-    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-  }
-
-  draw() {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `hsla(${this.hue}, 70%, 65%, ${this.opacity})`;
-    ctx.fill();
-  }
-}
-
-function initParticles() {
-  particles = [];
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    particles.push(new Particle());
-  }
-}
-
-function drawConnections() {
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < 150) {
-        const opacity = (1 - dist / 150) * 0.08;
-        ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `rgba(139, 92, 246, ${opacity})`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-      }
+        // Create aliens
+        for (let row = 0; row < ALIEN_ROWS; row++) {
+            for (let col = 0; col < ALIEN_COLS; col++) {
+                aliens.push({
+                    x: col * ALIEN_X_SPACING + ALIEN_OFFSET_X,
+                    y: row * ALIEN_Y_SPACING + ALIEN_OFFSET_Y,
+                    width: ALIEN_SIZE,
+                    height: ALIEN_SIZE,
+                    color: 'red',
+                    isHit: false
+                });
+            }
+        }
     }
-  }
-}
 
-function animateParticles() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function drawPlayer() {
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
 
-  particles.forEach(p => {
-    p.update();
-    p.draw();
-  });
+    function drawBullets() {
+        bullets.forEach(bullet => {
+            ctx.fillStyle = bullet.color;
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        });
+    }
 
-  drawConnections();
-  requestAnimationFrame(animateParticles);
-}
+    function drawAliens() {
+        aliens.forEach(alien => {
+            if (!alien.isHit) {
+                ctx.fillStyle = alien.color;
+                ctx.fillRect(alien.x, alien.y, alien.width, alien.height);
+            }
+        });
+    }
 
-// ─── Initialize ──────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
-  resizeCanvas();
-  initParticles();
+    function updateGame() {
+        if (gameOver) return;
+
+        // Update player position (controlled by keys)
+
+        // Update bullets
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            bullets[i].y -= BULLET_SPEED;
+            if (bullets[i].y < 0) {
+                bullets.splice(i, 1);
+            }
+        }
+
+        // Update aliens
+        let alienMovedDown = false;
+        for (let i = 0; i < aliens.length; i++) {
+            if (!aliens[i].isHit) {
+                aliens[i].x += ALIEN_SPEED * alienDirection;
+                if (aliens[i].x + aliens[i].width > spaceInvadersCanvas.width || aliens[i].x < 0) {
+                    alienDirection *= -1;
+                    alienMovedDown = true;
+                }
+                if (aliens[i].y + aliens[i].height > player.y) {
+                    gameOver = true;
+                }
+            }
+        }
+
+        if (alienMovedDown) {
+            aliens.forEach(alien => {
+                if (!alien.isHit) {
+                    alien.y += 10; // Move aliens down when they hit the edge
+                }
+            });
+        }
+
+        // Check for collisions (bullets and aliens)
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            for (let j = aliens.length - 1; j >= 0; j--) {
+                if (!aliens[j].isHit &&
+                    bullets[i].x < aliens[j].x + aliens[j].width &&
+                    bullets[i].x + bullets[i].width > aliens[j].x &&
+                    bullets[i].y < aliens[j].y + aliens[j].height &&
+                    bullets[i].y + bullets[i].height > aliens[j].y) {
+                    aliens[j].isHit = true;
+                    bullets.splice(i, 1);
+                    score += 10;
+                    break;
+                }
+            }
+        }
+
+        // Check if all aliens are gone
+        if (aliens.every(alien => alien.isHit)) {
+            gameOver = true;
+            // Potentially add a win condition or next level
+        }
+
+        drawGame();
+        requestAnimationFrame(updateGame);
+    }
+
+    function drawGame() {
+        ctx.clearRect(0, 0, spaceInvadersCanvas.width, spaceInvadersCanvas.height);
+        drawPlayer();
+        drawBullets();
+        drawAliens();
+
+        ctx.fillStyle = 'white';
+        ctx.font = '16px "Press Start 2P"'; // Use retro font
+        ctx.fillText('Score: ' + score, 10, 20);
+
+        if (gameOver) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, spaceInvadersCanvas.width, spaceInvadersCanvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '30px "Press Start 2P"';
+            ctx.fillText('GAME OVER', spaceInvadersCanvas.width / 2 - ctx.measureText('GAME OVER').width / 2, spaceInvadersCanvas.height / 2 - 20);
+            ctx.font = '20px "Press Start 2P"';
+            ctx.fillText('Score: ' + score, spaceInvadersCanvas.width / 2 - ctx.measureText('Score: ' + score).width / 2, spaceInvadersCanvas.height / 2 + 20);
+            ctx.fillText('Press R to Restart', spaceInvadersCanvas.width / 2 - ctx.measureText('Press R to Restart').width / 2, spaceInvadersCanvas.height / 2 + 60);
+        }
+    }
+
+    // Event Listeners
+    document.addEventListener('keydown', e => {
+        if (gameOver && e.key === 'r') {
+            initGame();
+            updateGame();
+            return;
+        }
+        if (!gameOver) {
+            if (e.key === 'ArrowLeft') {
+                player.x -= PLAYER_SPEED;
+            } else if (e.key === 'ArrowRight') {
+                player.x += PLAYER_SPEED;
+            } else if (e.key === ' ') {
+                bullets.push({
+                    x: player.x + player.width / 2 - 2,
+                    y: player.y,
+                    width: 4,
+                    height: 10,
+                    color: 'white'
+                });
+            }
+            // Keep player within bounds
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > spaceInvadersCanvas.width) player.x = spaceInvadersCanvas.width - player.width;
+        }
+    });
+
+    initGame();
+    updateGame();
 });
 
-resizeCanvas();
-initParticles();
-animateParticles();
-renderGames();

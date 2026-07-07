@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Wordle Clone — Guess a 5-letter word in 6 tries. Free browser game on Eliyas Games.">
+  <title>Wordle — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow--1 {
+      width: 500px;
+      height: 500px;
+      background: #EC4899;
+      top: -150px;
+      left: -100px;
+      animation: floatGlow 12s ease-in-out infinite;
+    }
+    .glow--2 {
+      width: 400px;
+      height: 400px;
+      background: #8B5CF6;
+      bottom: -100px;
+      right: -100px;
+      animation: floatGlow 15s ease-in-out infinite reverse;
+    }
+    @keyframes floatGlow {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(25px, -20px) scale(1.1); }
+    }
+
+    .back-link {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 200ms ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover {
+      color: #f0f0f5;
+      border-color: rgba(236, 72, 153, 0.4);
+      background: rgba(236, 72, 153, 0.1);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 5rem 1.5rem 2rem;
+      gap: 1.25rem;
+      max-width: 540px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      width: 100%;
+    }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: #6b6b80;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 350px;
+      aspect-ratio: 6/5;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .tile {
+      aspect-ratio: 1 / 1;
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.5rem, 6vw, 2.2rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.03);
+      transition: transform 80ms ease, border-color 150ms ease, background 150ms ease;
+    }
+
+    .tile[data-state="tbd"] {
+      border-color: rgba(255,255,255,0.25);
+      animation: pop 120ms ease-out;
+    }
+    .tile[data-state="correct"] {
+      border-color: rgba(16, 185, 129, 0.5);
+      background: rgba(16, 185, 129, 0.12);
+      color: #6ee7b7;
+    }
+    .tile[data-state="present"] {
+      border-color: rgba(234, 179, 8, 0.5);
+      background: rgba(234, 179, 8, 0.1);
+      color: #fde047;
+    }
+    .tile[data-state="absent"] {
+      border-color: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      color: #a0a0b8;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    .keyboard {
+      width: 100%;
+      max-width: 500px;
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+    }
+
+    .key {
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #f0f0f5;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 120ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .key:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(236, 72, 153, 0.5);
+    }
+    .key:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .key.wide {
+      grid-column: span 2;
+      aspect-ratio: auto;
+      height: 44px;
+      font-size: 0.85rem;
+    }
+    .key[data-state="correct"] { background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.6); color: #6ee7b7; }
+    .key[data-state="present"] { background: rgba(234, 179, 8, 0.18); border-color: rgba(234, 179, 8, 0.6); color: #fde047; }
+    .key[data-state="absent"] { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); color: #a0a0b8; }
+
+    .overlay {
+      position: absolute;
+      inset: -4px;
+      border-radius: 20px;
+      background: rgba(10,10,15,0.94);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 300ms ease;
+      z-index: 10;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .stage-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    .overlay__emoji {
+      font-size: 3.5rem;
+      animation: floatEmoji 2s ease-in-out infinite;
+    }
+    .overlay__title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #f0f0f5;
+    }
+    .overlay__text {
+      color: #a0a0b8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .overlay__actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .helper-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 350px;
+      color: #6b6b80;
+      font-size: 0.8rem;
+    }
+
+    .btn {
+      padding: 0.75rem 2rem;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(236,72,153,0.3);
+    }
+    .btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(236,72,153,0.45);
+    }
+    .btn--ghost {
+      background: rgba(255,255,255,0.05);
+      color: #a0a0b8;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn--ghost:hover {
+      color: #f0f0f5;
+      background: rgba(255,255,255,0.08);
+    }
+
+    @media (max-width: 400px) {
+      .keyboard { grid-template-columns: repeat(10, 1fr); gap: 4px; }
+      .key { font-size: 0.85rem; border-radius: 8px; }
+      .board { max-width: 290px; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Wordle</h1>
+      <p>Guess the hidden 5-letter word in 6 tries.</p>
+    </header>
+
+    <div class="stage-wrapper">
+      <div class="board" id="board"></div>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay__emoji" id="overlayEmoji">🧩</div>
+        <div class="overlay__title" id="overlayTitle">Nice</div>
+        <div class="overlay__text" id="overlayText">The word was ___</div>
+        <div class="overlay__actions">
+          <button class="btn btn--primary btn--small" id="newGameBtn">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="keyboard" id="keyboard"></div>
+
+    <div class="helper-row">
+      <span>Enter = Submit</span>
+      <button class="btn btn--ghost" id="giveUpBtn" style="padding:0.4rem 0.8rem;font-size:0.75rem;">Give Up</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const WORDS = [
+        'APPLE','BEACH','BRAIN','BREAD','BRUSH','CHAIR','CHEST','CHORD','CLICK','CLOCK',
+        'CLOUD','DANCE','DIARY','DRINK','DRIVE','EARTH','FEAST','FIELD','FRUIT','GLASS',
+        'GLOBE','GRAPE','GREEN','GHOST','HEART','HOUSE','JUICE','LIGHT','LEMON','MELON',
+        'MONEY','MUSIC','NIGHT','OCEAN','PARTY','PHONE','PIANO','PILOT','PLANE','PLANT',
+        'PLATE','POWER','RADIO','RIVER','ROBOT','SHIRT','SHOES','SMILE','SNAKE','SPACE',
+        'SPOON','STORM','TABLE','TIGER','TOAST','TOUCH','TRAIN','TRUCK','VOICE','WATER',
+        'WATCH','WHALE','WORLD','WRITE','YOUTH','ZEBRA','CRANE','SLATE','AUDIO','ADIEU'
+      ];
+
+      const boardEl = document.getElementById('board');
+      const keyboardEl = document.getElementById('keyboard');
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const overlayEmoji = document.getElementById('overlayEmoji');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const giveUpBtn = document.getElementById('giveUpBtn');
+
+      let answer = '';
+      let guesses = [];
+      let currentGuess = '';
+      let active = true;
+
+      function pick() {
+        answer = WORDS[Math.floor(Math.random() * WORDS.length)];
+        guesses = [];
+        currentGuess = '';
+        active = true;
+        overlay.classList.remove('visible');
+        renderBoard();
+        renderKeyboard();
+      }
+
+      function renderBoard() {
+        boardEl.innerHTML = '';
+        for (let r = 0; r < 6; r++) {
+          const row = document.createElement('div');
+          row.className = 'row';
+          for (let c = 0; c < 5; c++) {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            const letter = guesses[r] && guesses[r][c];
+            tile.textContent = letter ? letter : '';
+            const state = getTileState(r, c, letter);
+            if (state) tile.dataset.state = state;
+            row.appendChild(tile);
+          }
+          boardEl.appendChild(row);
+        }
+      }
+
+      function getTileState(row, col, letter) {
+        if (!letter) return null;
+        const guess = guesses[row];
+        if (!guess) return null;
+        const ansLetters = answer.split('');
+        const guessLetters = guess.split('');
+
+        const exact = guessLetters[col] === ansLetters[col];
+        const present = !exact && ansLetters.includes(guessLetters[col]);
+        const absent = !exact && !present;
+
+        if (exact) return 'correct';
+        if (present) return 'present';
+        return 'absent';
+      }
+
+      function gradeGuess(guess) {
+        const ansLetters = answer.split('');
+        const guessLetters = guess.split('');
+        const result = Array(5).fill('absent');
+        const ansCounts = {};
+
+        for (const ch of ansLetters) ansCounts[ch] = (ansCounts[ch] || 0) + 1;
+
+        for (let i = 0; i < 5; i++) {
+          if (guessLetters[i] === ansLetters[i]) {
+            result[i] = 'correct';
+            ansCounts[guessLetters[i]] -= 1;
+          }
+        }
+
+        for (let i = 0; i < 5; i++) {
+          if (result[i] === 'correct') continue;
+          const ch = guessLetters[i];
+          if (ansCounts[ch] > 0) {
+            result[i] = 'present';
+            ansCounts[ch] -= 1;
+          }
+        }
+        return result;
+      }
+
+      function renderKeyboard() {
+        const rows = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+        keyboardEl.innerHTML = rows
+          .map((row, idx) => {
+            const keys = row.split('').map((ch) => {
+              const state = keyboardState(ch);
+              return '<button class="key"' + (state ? ' data-state="' + state + '"' : '') + ' data-key="' + ch + '">' + ch + '</button>';
+            }).join('');
+            const enter = idx === 1 ? '<button class="key wide" data-key="ENTER">Enter</button>' : '';
+            const backspace = idx === 2 ? '<button class="key wide" data-key="BACKSPACE">⌫</button>' : '';
+            return keys + enter + backspace;
+          })
+          .join('');
+      }
+
+      function keyboardState(ch) {
+        const used = new Set();
+        let best = null;
+        const bestRank = (s) => ({ absent: 0, present: 1, correct: 2 }[s] || -1);
+
+        for (const g of guesses) {
+          const grade = gradeGuess(g);
+          for (let i = 0; i < 5; i++) {
+            const letter = g[i];
+            const state = grade[i];
+            const rank = bestRank(state);
+            if (!best || rank > bestRank(best)) best = state;
+          }
+        }
+        if (!best) return null;
+        return best;
+      }
+
+      function applyRowAnimations() {
+        const grade = gradeGuess(currentGuess);
+        for (let c = 0; c < 5; c++) {
+          const row = boardEl.children[guesses.length - 1];
+          const tile = row.children[c];
+          setTimeout(() => {
+            tile.dataset.state = grade[c];
+          }, c * 180);
+        }
+      }
+
+      function submitGuess() {
+        if (!active || currentGuess.length !== 5) return;
+        const guess = currentGuess;
+        guesses.push(guess);
+        currentGuess = '';
+        applyRowAnimations();
+        renderKeyboard();
+
+        setTimeout(() => {
+          if (guess === answer) {
+            active = false;
+            overlayEmoji.textContent = '🎉';
+            overlayTitle.textContent = guesses.length === 1 ? 'Genius' : guesses.length === 2 ? 'Magnificent' : guesses.length <= 4 ? 'Impressive' : 'Phew';
+            overlayText.textContent = 'You guessed: ' + answer;
+            overlay.classList.add('visible');
+            return;
+          }
+          if (guesses.length >= 6) {
+            active = false;
+            overlayEmoji.textContent = '🧩';
+            overlayTitle.textContent = 'Game Over';
+            overlayText.textContent = 'The word was: ' + answer;
+            overlay.classList.add('visible');
+          }
+        }, 5 * 180 + 120);
+      }
+
+      function handleKey(key) {
+        if (!active) return;
+        if (key === 'ENTER') {
+          submitGuess();
+          return;
+        }
+        if (key === 'BACKSPACE') {
+          currentGuess = currentGuess.slice(0, -1);
+          renderBoard();
+          return;
+        }
+        if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
+          currentGuess += key;
+          renderBoard();
+        }
+      }
+
+      function onKeyClick(e) {
+        const key = e.target.closest('.key');
+        if (!key) return;
+        handleKey(key.dataset.key);
+      }
+
+      function onKeyDown(e) {
+        const key = String(e.key).toUpperCase();
+        handleKey(key);
+      }
+
+      keyboardEl.addEventListener('click', onKeyClick);
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        onKeyDown(e);
+      });
+      newGameBtn.addEventListener('click', pick);
+      giveUpBtn.addEventListener('click', () => {
+        if (!active) return;
+        active = false;
+        overlayEmoji.textContent = '🧩';
+        overlayTitle.textContent = 'Game Over';
+        overlayText.textContent = 'The word was: ' + answer;
+        overlay.classList.add('visible');
+      });
+
+      pick();
+    })();
+  </script>
+</body>
+</html>

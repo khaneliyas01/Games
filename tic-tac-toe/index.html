@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tic Tac Toe — Classic 3x3 strategy game. Play free in your browser on Eliyas Games.">
+  <title>Tic Tac Toe — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❌</text></svg>">
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow--1 {
+      width: 500px;
+      height: 500px;
+      background: #EC4899;
+      top: -150px;
+      left: -100px;
+      animation: floatGlow 12s ease-in-out infinite;
+    }
+    .glow--2 {
+      width: 400px;
+      height: 400px;
+      background: #8B5CF6;
+      bottom: -100px;
+      right: -100px;
+      animation: floatGlow 15s ease-in-out infinite reverse;
+    }
+    @keyframes floatGlow {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(25px, -20px) scale(1.1); }
+    }
+
+    .back-link {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 200ms ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover {
+      color: #f0f0f5;
+      border-color: rgba(236, 72, 153, 0.4);
+      background: rgba(236, 72, 153, 0.1);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 5rem 1.5rem 2rem;
+      gap: 1.5rem;
+      max-width: 520px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      width: 100%;
+    }
+    .header h1 {
+      font-family: outfit, sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: #6b6b80;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+    .stat-card__label {
+      font-size: 0.65rem;
+      color: #6b6b80;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .stat-card__val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #f0f0f5;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 150ms ease;
+      user-select: none;
+    }
+
+    .cell:hover:not(.taken) {
+      background: rgba(236, 72, 153, 0.08);
+      border-color: rgba(236, 72, 153, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .cell.taken {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .cell[data-mark="X"] {
+      color: #EC4899;
+      text-shadow: 0 0 18px rgba(236, 72, 153, 0.35);
+    }
+
+    .cell[data-mark="O"] {
+      color: #8B5CF6;
+      text-shadow: 0 0 18px rgba(139, 92, 246, 0.35);
+    }
+
+    .cell.win-cell {
+      border-color: rgba(236, 72, 153, 0.7);
+      box-shadow: 0 0 22px rgba(236, 72, 153, 0.25);
+    }
+
+    .turn-bubble {
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #a0a0b8;
+    }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 0.75rem 2rem;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .btn--primary {
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(236,72,153,0.3);
+    }
+
+    .btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(236,72,153,0.45);
+    }
+
+    .mode-bar {
+      display: inline-flex;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .mode-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      color: #a0a0b8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+
+    .mode-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: #f0f0f5;
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(135deg, rgba(236,72,153,0.25), rgba(139,92,246,0.25));
+      color: #f0f0f5;
+    }
+
+    .help-hint {
+      color: #6b6b80;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: -4px;
+      border-radius: 20px;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 300ms ease;
+      z-index: 10;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .board-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .overlay__emoji {
+      font-size: 3.5rem;
+      animation: floatEmoji 2s ease-in-out infinite;
+    }
+
+    .overlay__title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #f0f0f5;
+    }
+
+    .overlay__text {
+      color: #a0a0b8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .overlay__actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .btn--small {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      border-radius: 10px;
+    }
+
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 4rem 1rem 1.5rem;
+        gap: 1rem;
+      }
+      .board {
+        max-width: 300px;
+      }
+    }
+
+    /* Make sure site landing CSS can load without breaking this page */
+    .no-shared .main-layout { background: transparent; }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Tic Tac Toe</h1>
+      <p>Classic 3x3 strategy. Play locally or against basic AI.</p>
+    </header>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-card__label">Score</div>
+        <div class="stat-card__val" id="score">0 - 0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Turn</div>
+        <div class="stat-card__val" id="turn">X</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Result</div>
+        <div class="stat-card__val" id="result">—</div>
+      </div>
+    </div>
+
+    <div class="mode-bar">
+      <button class="mode-btn active" data-mode="pvp">PvP</button>
+      <button class="mode-btn" data-mode="ai">vs AI</button>
+    </div>
+
+    <div class="board-wrapper">
+      <div class="board" id="board">
+        <button class="cell" data-index="0" aria-label="cell 0"></button>
+        <button class="cell" data-index="1" aria-label="cell 1"></button>
+        <button class="cell" data-index="2" aria-label="cell 2"></button>
+        <button class="cell" data-index="3" aria-label="cell 3"></button>
+        <button class="cell" data-index="4" aria-label="cell 4"></button>
+        <button class="cell" data-index="5" aria-label="cell 5"></button>
+        <button class="cell" data-index="6" aria-label="cell 6"></button>
+        <button class="cell" data-index="7" aria-label="cell 7"></button>
+        <button class="cell" data-index="8" aria-label="cell 8"></button>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay__emoji" id="overlayEmoji">🏁</div>
+        <div class="overlay__title" id="overlayTitle">Game Over</div>
+        <div class="overlay__text" id="overlayText">Nice match.</div>
+        <div class="overlay__actions">
+          <button class="btn btn--primary btn--small" id="newGameBtn">New Game</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="help-hint">Click a cell to play. First to 3 in a row wins.</p>
+  </div>
+
+  <script>
+    (function () {
+      const WIN_COMBOS = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
+
+      const cells = Array.from(document.querySelectorAll('.cell'));
+      const boardEl = document.getElementById('board');
+      const turnEl = document.getElementById('turn');
+      const scoreEl = document.getElementById('score');
+      const resultEl = document.getElementById('result');
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const overlayEmoji = document.getElementById('overlayEmoji');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const modeButtons = document.querySelectorAll('.mode-btn');
+
+      let board = Array(9).fill('');
+      let current = 'X';
+      let mode = 'pvp';
+      let active = true;
+      let xScore = 0;
+      let oScore = 0;
+      let aiThinking = false;
+
+      function checkWin(side) {
+        for (const combo of WIN_COMBOS) {
+          if (combo.every((i) => board[i] === side)) return combo;
+        }
+        return null;
+      }
+
+      function isDraw() {
+        return board.every((cell) => cell !== '');
+      }
+
+      function updateUI(combo) {
+        turnEl.textContent = current === 'X' ? 'X' : 'O';
+        scoreEl.textContent = xScore + ' - ' + oScore;
+
+        cells.forEach((cell) => {
+          const idx = Number(cell.dataset.index);
+          cell.textContent = board[idx];
+          cell.dataset.mark = board[idx];
+          cell.classList.toggle('taken', board[idx] !== '');
+          cell.classList.remove('win-cell');
+        });
+
+        if (combo) {
+          combo.forEach((idx) => cells[idx].classList.add('win-cell'));
+        }
+      }
+
+      function endGame(winner, combo) {
+        active = false;
+        if (winner === 'X') {
+          xScore += 1;
+          resultEl.textContent = 'X wins';
+          overlayEmoji.textContent = '🎉';
+          overlayTitle.textContent = 'X Wins';
+          overlayText.textContent = 'Great game. Want another round?';
+        } else if (winner === 'O') {
+          oScore += 1;
+          resultEl.textContent = 'O wins';
+          overlayEmoji.textContent = '🏆';
+          overlayTitle.textContent = 'O Wins';
+          overlayText.textContent = 'Great game. Want another round?';
+        } else {
+          resultEl.textContent = 'Draw';
+          overlayEmoji.textContent = '🤝';
+          overlayTitle.textContent = 'Draw';
+          overlayText.textContent = 'Evenly matched. Try again?';
+        }
+        updateUI(combo || []);
+        overlay.classList.add('visible');
+      }
+
+      function resetBoard() {
+        board = Array(9).fill('');
+        current = 'X';
+        active = true;
+        aiThinking = false;
+        resultEl.textContent = '—';
+        overlay.classList.remove('visible');
+        updateUI([]);
+      }
+
+      function minimax(newBoard, player) {
+        const avail = newBoard.map((v, i) => (v === '' ? i : null)).filter((v) => v !== null);
+
+        if (checkWin('O')) return { score: 10 };
+        if (checkWin('X')) return { score: -10 };
+        if (avail.length === 0) return { score: 0 };
+
+        const moves = [];
+        for (const idx of avail) {
+          const move = { index: idx };
+          newBoard[idx] = player;
+          move.score = player === 'O' ? minimax(newBoard, 'X').score : minimax(newBoard, 'O').score;
+          newBoard[idx] = '';
+          moves.push(move);
+        }
+
+        let bestMove = moves[0];
+        for (const m of moves) {
+          if (player === 'O') {
+            if (m.score > bestMove.score) bestMove = m;
+          } else {
+            if (m.score < bestMove.score) bestMove = m;
+          }
+        }
+        return bestMove;
+      }
+
+      function aiMove() {
+        if (!active || mode !== 'ai' || current !== 'O') return;
+        aiThinking = true;
+        setTimeout(() => {
+          const best = minimax([...board], 'O');
+          if (typeof best.index === 'number') playMove(best.index);
+          aiThinking = false;
+        }, 280);
+      }
+
+      function playMove(idx) {
+        if (!active || board[idx] !== '' || aiThinking) return;
+
+        board[idx] = current;
+        const combo = checkWin(current);
+        updateUI(combo);
+
+        if (combo) {
+          endGame(current, combo);
+          return;
+        }
+        if (isDraw()) {
+          endGame(null, null);
+          return;
+        }
+
+        current = current === 'X' ? 'O' : 'X';
+        updateUI([]);
+
+        if (mode === 'ai' && current === 'O') {
+          aiMove();
+        }
+      }
+
+      function onCellClick(e) {
+        const cell = e.target.closest('.cell');
+        if (!cell) return;
+        const idx = Number(cell.dataset.index);
+        playMove(idx);
+      }
+
+      cells.forEach((cell) => cell.addEventListener('click', onCellClick));
+      newGameBtn.addEventListener('click', resetBoard);
+
+      modeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modeButtons.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          mode = btn.dataset.mode || 'pvp';
+          resetBoard();
+        });
+      });
+
+      updateUI([]);
+      resetBoard();
+    })();
+  </script>
+</body>
+</html>

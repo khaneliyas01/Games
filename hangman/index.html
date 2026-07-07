@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Hangman — Guess the word before the man is drawn. Free browser game on Eliyas Games.">
+  <title>Hangman — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎪</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow--1 {
+      width: 500px;
+      height: 500px;
+      background: #EC4899;
+      top: -150px;
+      left: -100px;
+      animation: floatGlow 12s ease-in-out infinite;
+    }
+    .glow--2 {
+      width: 400px;
+      height: 400px;
+      background: #8B5CF6;
+      bottom: -100px;
+      right: -100px;
+      animation: floatGlow 15s ease-in-out infinite reverse;
+    }
+    @keyframes floatGlow {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(25px, -20px) scale(1.1); }
+    }
+
+    .back-link {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 200ms ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover {
+      color: #f0f0f5;
+      border-color: rgba(236, 72, 153, 0.4);
+      background: rgba(236, 72, 153, 0.1);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 5rem 1.5rem 2rem;
+      gap: 1.25rem;
+      max-width: 680px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      width: 100%;
+    }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: #6b6b80;
+      font-size: 0.9rem;
+      margin-top: 0.25rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+    .stat-card__label {
+      font-size: 0.65rem;
+      color: #6b6b80;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .stat-card__val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #f0f0f5;
+    }
+
+    .stage {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (min-width: 640px) {
+      .stage {
+        grid-template-columns: 320px 1fr;
+      }
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .gallows {
+      font-size: 5.5rem;
+      line-height: 1;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .word {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      font-weight: 800;
+      letter-spacing: 0.25em;
+      text-align: center;
+      min-height: 2.4rem;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #a0a0b8;
+      text-align: center;
+    }
+
+    .letters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+    }
+
+    .key {
+      width: 36px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: #f0f0f5;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 120ms ease;
+    }
+    .key:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: rgba(236, 72, 153, 0.5);
+    }
+    .key:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+    .key.correct {
+      opacity: 1;
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #6ee7b7;
+    }
+    .key.wrong {
+      opacity: 0.35;
+    }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .btn {
+      padding: 0.75rem 2rem;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(236,72,153,0.3);
+    }
+    .btn--primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(236,72,153,0.45);
+    }
+    .btn--ghost {
+      background: rgba(255,255,255,0.05);
+      color: #a0a0b8;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn--ghost:hover {
+      color: #f0f0f5;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .help-hint {
+      color: #6b6b80;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: -4px;
+      border-radius: 20px;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 300ms ease;
+      z-index: 10;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .stage-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+    .overlay__emoji {
+      font-size: 3.5rem;
+      animation: floatEmoji 2s ease-in-out infinite;
+    }
+    .overlay__title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #f0f0f5;
+    }
+    .overlay__text {
+      color: #a0a0b8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .overlay__actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    @keyframes floatEmoji {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 4rem 1rem 1.5rem;
+        gap: 1rem;
+      }
+      .key {
+        width: 30px;
+        height: 34px;
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Hangman</h1>
+      <p>Guess the hidden word one letter at a time.</p>
+    </header>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-card__label">Wrong</div>
+        <div class="stat-card__val" id="wrong">0 / 6</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Category</div>
+        <div class="stat-card__val" id="category">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Status</div>
+        <div class="stat-card__val" id="status">—</div>
+      </div>
+    </div>
+
+    <div class="stage-wrapper">
+      <div class="stage">
+        <div class="panel">
+          <div class="gallows" id="gallows" aria-live="polite">🎪</div>
+          <div class="word" id="word" aria-live="polite">_ _ _ _ _</div>
+          <div class="hint" id="hint">Hint will be shown after 2 misses.</div>
+        </div>
+
+        <div class="panel">
+          <div class="letters" id="letters"></div>
+          <div class="actions">
+            <button class="btn btn--primary" id="newGameBtn">New Word</button>
+            <button class="btn btn--ghost" id="giveUpBtn">Give Up</button>
+          </div>
+          <div class="grid2">
+            <div class="stat-card">
+              <div class="stat-card__label">Wins</div>
+              <div class="stat-card__val" id="wins">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__label">Losses</div>
+              <div class="stat-card__val" id="losses">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay__emoji" id="overlayEmoji">🏁</div>
+        <div class="overlay__title" id="overlayTitle">Game Over</div>
+        <div class="overlay__text" id="overlayText">Nice try.</div>
+        <div class="overlay__actions">
+          <button class="btn btn--primary btn--small" id="overlayNewGameBtn">New Word</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="help-hint">On desktop you can also use your keyboard. Wrong guesses are limited.</p>
+  </div>
+
+  <script>
+    (function () {
+      const WORDS = [
+        { word: 'JAVASCRIPT', category: 'Programming', hint: 'Language of the web' },
+        { word: 'BROWSER', category: 'Tech', hint: 'You are using one right now' },
+        { word: 'KEYBOARD', category: 'Hardware', hint: 'Type with it' },
+        { word: 'GALAXY', category: 'Space', hint: 'Collection of stars' },
+        { word: 'OXYGEN', category: 'Science', hint: 'Essential for breathing' },
+        { word: 'PYRAMID', category: 'History', hint: 'Ancient Egyptian landmark' },
+        { word: 'PENGUIN', category: 'Animals', hint: 'A flightless bird' },
+        { word: 'DIAMOND', category: 'Gems', hint: 'Hardest natural mineral' },
+        { word: 'VOLCANO', category: 'Nature', hint: 'It erupts' },
+        { word: 'SATELLITE', category: 'Space', hint: 'Orbits Earth' },
+        { word: 'TREASURE', category: 'Adventure', hint: 'Often buried' },
+        { word: 'CURRENT', category: 'Physics', hint: 'Flow of charge' },
+        { word: 'HORIZON', category: 'Nature', hint: 'Where sky meets land' },
+        { word: 'RAVEN', category: 'Animals', hint: 'Black, clever bird' },
+        { word: 'PUZZLE', category: 'Games', hint: 'What you are playing' }
+      ];
+
+      const GALLOWS_STATES = [
+        '🎪',
+        '🌳',
+        '🫤',
+        '😕',
+        '🤔',
+        '😬',
+        '💀'
+      ];
+
+      const wordEl = document.getElementById('word');
+      const hintEl = document.getElementById('hint');
+      const lettersEl = document.getElementById('letters');
+      const wrongEl = document.getElementById('wrong');
+      const categoryEl = document.getElementById('category');
+      const statusEl = document.getElementById('status');
+      const winsEl = document.getElementById('wins');
+      const lossesEl = document.getElementById('losses');
+      const gallowsEl = document.getElementById('gallows');
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const overlayEmoji = document.getElementById('overlayEmoji');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const overlayNewGameBtn = document.getElementById('overlayNewGameBtn');
+      const giveUpBtn = document.getElementById('giveUpBtn');
+
+      let current = null;
+      let guessed = new Set();
+      let wrong = 0;
+      let maxWrong = 6;
+      let active = true;
+      let wins = 0;
+      let losses = 0;
+
+      function pick() {
+        current = WORDS[Math.floor(Math.random() * WORDS.length)];
+        guessed = new Set();
+        wrong = 0;
+        active = true;
+        statusEl.textContent = 'Playing';
+        hintEl.textContent = 'Hint will be shown after 2 misses.';
+        overlay.classList.remove('visible');
+        categoryEl.textContent = current.category;
+        renderWord();
+        renderKeys();
+        updateStats();
+      }
+
+      function renderWord() {
+        const shown = current.word
+          .split('')
+          .map((ch) => (guessed.has(ch) ? ch : '_'))
+          .join(' ');
+        wordEl.textContent = shown;
+      }
+
+      function updateStats() {
+        wrongEl.textContent = wrong + ' / ' + maxWrong;
+        const shown = GALLOWS_STATES[Math.min(wrong, GALLOWS_STATES.length - 1)];
+        gallowsEl.textContent = shown;
+      }
+
+      function revealHint() {
+        if (wrong >= 2 && current) {
+          hintEl.textContent = 'Hint: ' + current.hint;
+        }
+      }
+
+      function endGame(won) {
+        active = false;
+        renderKeys(true);
+
+        if (won) {
+          wins += 1;
+          statusEl.textContent = 'Won';
+          overlayEmoji.textContent = '🎉';
+          overlayTitle.textContent = 'You Won';
+          overlayText.textContent = 'You guessed: ' + current.word;
+        } else {
+          losses += 1;
+          statusEl.textContent = 'Lost';
+          overlayEmoji.textContent = '💀';
+          overlayTitle.textContent = 'Game Over';
+          overlayText.textContent = 'The word was: ' + current.word;
+        }
+        winsEl.textContent = wins;
+        lossesEl.textContent = losses;
+        overlay.classList.add('visible');
+      }
+
+      function guess(ch) {
+        if (!active || !current) return;
+        const letter = String(ch).toUpperCase();
+        if (guessed.has(letter)) return;
+        guessed.add(letter);
+
+        const hit = current.word.includes(letter);
+        if (hit) {
+          renderWord();
+          revealHint();
+          if (current.word.split('').every((ch) => guessed.has(ch))) {
+            endGame(true);
+          }
+        } else {
+          wrong += 1;
+          revealHint();
+          updateStats();
+          if (wrong >= maxWrong) {
+            endGame(false);
+          }
+        }
+        renderKeys();
+      }
+
+      function renderKeys(disabled) {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        lettersEl.innerHTML = alphabet
+          .map((ch) => {
+            const isGuessed = guessed.has(ch);
+            let extra = '';
+            if (isGuessed) {
+              const inWord = current && current.word.includes(ch);
+              extra = inWord ? ' correct' : ' wrong';
+            }
+            return '<button class="key' + extra + '" data-letter="' + ch + '" ' + (disabled || isGuessed ? 'disabled' : '') + ' aria-label="letter ' + ch + '">' + ch + '</button>';
+          })
+          .join('');
+      }
+
+      function onKeyClick(e) {
+        const btn = e.target.closest('.key');
+        if (!btn) return;
+        const letter = btn.dataset.letter;
+        if (!letter) return;
+        guess(letter);
+      }
+
+      function onKeyDown(e) {
+        if (!active) return;
+        const ch = String.fromCharCode(e.key.toUpperCase().charCodeAt(0));
+        if (ch >= 'A' && ch <= 'Z') {
+          guess(ch);
+        }
+      }
+
+      lettersEl.addEventListener('click', onKeyClick);
+      newGameBtn.addEventListener('click', pick);
+      overlayNewGameBtn.addEventListener('click', pick);
+      giveUpBtn.addEventListener('click', () => {
+        if (!active || !current) return;
+        endGame(false);
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        onKeyDown(e);
+      });
+
+      // Seed correct/wrong classes on existing keys from initial guessed state.
+      renderKeys();
+      pick();
+    })();
+  </script>
+</body>
+</html>
