@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Connect Four — Drop discs and try to connect four in a row, column, or diagonal.">
+  <title>Connect Four — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🟡</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #EC4899; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #8B5CF6; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(25px, -20px) scale(1.1); } }
+
+    .back-link {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 200ms ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.1); }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 6rem 1.5rem 2rem;
+      gap: 1.1rem;
+      max-width: 560px;
+      width: 100%;
+    }
+
+    .header { text-align: center; width: 100%; }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header p { color: #6b6b80; font-size: 0.9rem; margin-top: 0.25rem; }
+
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+    .stat-card__label { font-size: 0.65rem; color: #6b6b80; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    .stat-card__val { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 900; color: #f0f0f5; }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      cursor: pointer;
+      transition: transform 120ms ease, background 150ms ease;
+    }
+    .cell:hover:not(.taken) { transform: translateY(-2px); background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.5); }
+    .cell.taken { cursor: not-allowed; pointer-events: none; }
+    .cell[data-player="0"] { background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b); border-color: rgba(255,107,107,0.45); box-shadow: 0 0 14px rgba(255,107,107,0.15); }
+    .cell[data-player="1"] { background: radial-gradient(circle at 35% 35%, #fbbf24, #b45309); border-color: rgba(251,191,36,0.55); box-shadow: 0 0 14px rgba(251,191,36,0.18); }
+    .cell.win-cell { box-shadow: 0 0 22px rgba(236,72,153,0.45); border-color: rgba(236,72,153,0.9); }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+    }
+    .btn {
+      padding: 0.75rem 2rem;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(236,72,153,0.3);
+    }
+    .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236,72,153,0.45); }
+    .btn--ghost {
+      background: rgba(255,255,255,0.05);
+      color: #a0a0b8;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn--ghost:hover { color: #f0f0f5; background: rgba(255,255,255,0.08); }
+    .help-hint { color: #6b6b80; font-size: 0.8rem; text-align: center; }
+
+    .mode-bar {
+      display: inline-flex;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .mode-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      color: #a0a0b8;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .mode-btn:hover:not(.active) { background: rgba(255,255,255,0.05); color: #f0f0f5; }
+    .mode-btn.active { background: linear-gradient(135deg, rgba(236,72,153,0.25), rgba(139,92,246,0.25)); color: #f0f0f5; }
+
+    .overlay {
+      position: absolute;
+      inset: -4px;
+      border-radius: 20px;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 300ms ease;
+      z-index: 10;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .board-wrapper { position: relative; width: 100%; }
+    .overlay.visible { opacity: 1; visibility: visible; }
+    .overlay__emoji { font-size: 3.5rem; animation: floatEmoji 2s ease-in-out infinite; }
+    .overlay__title { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: #f0f0f5; }
+    .overlay__text { color: #a0a0b8; font-size: 0.95rem; line-height: 1.6; }
+    @keyframes floatEmoji { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @media (max-width: 480px) {
+      .container { padding: 5rem 1rem 1.5rem; gap: 1rem; }
+      .board { max-width: 320px; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Connect Four</h1>
+      <p>Drop your discs and connect four in a row before your opponent does.</p>
+    </header>
+
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-card__label">Turn</div><div class="stat-card__val" id="turn">Red</div></div>
+      <div class="stat-card"><div class="stat-card__label">Status</div><div class="stat-card__val" id="status">Playing</div></div>
+      <div class="stat-card"><div class="stat-card__label">Rounds</div><div class="stat-card__val" id="rounds">0</div></div>
+    </div>
+
+    <div class="mode-bar">
+      <button class="mode-btn active" data-mode="ai">vs AI</button>
+      <button class="mode-btn" data-mode="pvp">PvP</button>
+    </div>
+
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay__emoji" id="overlayEmoji">🏁</div>
+        <div class="overlay__title" id="overlayTitle">Game Over</div>
+        <div class="overlay__text" id="overlayText">Nice match.</div>
+        <div class="actions">
+          <button class="btn btn--primary" id="newGameBtn">New Game</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn--primary" id="shuffleBtn">New Game</button>
+    </div>
+    <p class="help-hint">Click a column to drop your disc. First to connect four in any direction wins.</p>
+  </div>
+
+  <script>
+    (function () {
+      const ROWS = 6;
+      const COLS = 7;
+      const boardEl = document.getElementById('board');
+      const turnEl = document.getElementById('turn');
+      const statusEl = document.getElementById('status');
+      const roundsEl = document.getElementById('rounds');
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const overlayEmoji = document.getElementById('overlayEmoji');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const shuffleBtn = document.getElementById('shuffleBtn');
+      const modeButtons = document.querySelectorAll('.mode-btn');
+
+      let board = [];
+      let current = 0; // 0 red, 1 yellow
+      let mode = 'ai';
+      let active = true;
+      let rounds = 0;
+
+      const WIN_COMBOS = [];
+
+      function buildCombos() {
+        WIN_COMBOS.length = 0;
+        for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+          if (c + 3 < COLS) WIN_COMBOS.push([[r,c],[r,c+1],[r,c+2],[r,c+3]]);
+          if (r + 3 < ROWS) WIN_COMBOS.push([[r,c],[r+1,c],[r+2,c],[r+3,c]]);
+          if (r + 3 < ROWS && c + 3 < COLS) WIN_COMBOS.push([[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]]);
+          if (r + 3 < ROWS && c - 3 >= 0) WIN_COMBOS.push([[r,c],[r+1,c-1],[r+2,c-2],[r+3,c-3]]);
+        }
+      }
+      buildCombos();
+
+      function emptyBoard() { return Array.from({ length: ROWS }, () => Array(COLS).fill(-1)); }
+
+      function render() {
+        boardEl.innerHTML = '';
+        for (let r = 0; r < ROWS; r++) {
+          for (let c = 0; c < COLS; c++) {
+            const cell = document.createElement('button');
+            cell.className = 'cell';
+            cell.type = 'button';
+            cell.dataset.row = String(r);
+            cell.dataset.col = String(c);
+            const val = board[r][c];
+            if (val >= 0) {
+              cell.dataset.player = String(val);
+              cell.classList.add('taken');
+            }
+            boardEl.appendChild(cell);
+          }
+        }
+        turnEl.textContent = current === 0 ? 'Red' : 'Yellow';
+        statusEl.textContent = active ? 'Playing' : 'Over';
+      }
+
+      function drop(col) {
+        if (!active) return;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r][col] === -1) {
+            board[r][col] = current;
+            render();
+            const combo = checkWin(current);
+            if (combo) { end(current, combo); return; }
+            if (isDraw()) { end(null, null); return; }
+            current = current === 0 ? 1 : 0;
+            render();
+            if (mode === 'ai' && current === 1) queueAI();
+            return;
+          }
+        }
+      }
+
+      function checkWin(player) {
+        for (const combo of WIN_COMBOS) {
+          if (combo.every(([r,c]) => board[r][c] === player)) return combo;
+        }
+        return null;
+      }
+
+      function isDraw() {
+        return board.every((row) => row.every((val) => val !== -1));
+      }
+
+      function end(winner, combo) {
+        active = false;
+        rounds += 1;
+        roundsEl.textContent = rounds;
+        if (combo) {
+          combo.forEach(([r,c]) => {
+            const idx = r * COLS + c;
+            const cell = boardEl.children[idx];
+            if (cell) cell.classList.add('win-cell');
+          });
+        }
+        if (winner === 0) {
+          statusEl.textContent = 'Red wins';
+          overlayEmoji.textContent = '🎉';
+          overlayTitle.textContent = 'Red Wins';
+          overlayText.textContent = 'Great game! Want another round?';
+        } else if (winner === 1) {
+          statusEl.textContent = 'Yellow wins';
+          overlayEmoji.textContent = '🏆';
+          overlayTitle.textContent = 'Yellow Wins';
+          overlayText.textContent = 'Great game! Want another round?';
+        } else {
+          statusEl.textContent = 'Draw';
+          overlayEmoji.textContent = '🤝';
+          overlayTitle.textContent = 'Draw';
+          overlayText.textContent = 'Evenly matched. Try again?';
+        }
+        overlay.classList.add('visible');
+        render();
+      }
+
+      function resetBoard() {
+        board = emptyBoard();
+        current = 0;
+        active = true;
+        statusEl.textContent = 'Playing';
+        overlay.classList.remove('visible');
+        render();
+      }
+
+      function boardCopy() { return board.map((row) => row.slice()); }
+
+      function scorePosition(player) {
+        let s = 0;
+        for (const combo of WIN_COMBOS) {
+          const vals = combo.map(([r,c]) => board[r][c]);
+          const mine = vals.filter((v) => v === player).length;
+          const opp = vals.filter((v) => v === 1 - player).length;
+          if (mine === 4) s += 2000;
+          else if (mine === 3 && opp === 0) s += 120;
+          else if (mine === 2 && opp === 0) s += 12;
+          else if (opp === 3 && mine === 0) s -= 160;
+          else if (opp === 2 && mine === 0) s -= 14;
+        }
+        return s;
+      }
+
+      function validCols() {
+        const out = [];
+        for (let c = 0; c < COLS; c++) if (board[0][c] === -1) out.push(c);
+        return out;
+      }
+
+      function minimax(depth, maximizing, a, b) {
+        const combo = checkWin(maximizing ? 1 : 0);
+        if (combo) return maximizing ? 20000 - depth : depth - 20000;
+        if (validCols().length === 0) return 0;
+        const cols = validCols();
+        if (depth === 0) {
+          const row = Math.floor(Math.random() * cols.length);
+          const c = cols[row];
+          return scorePosition(1);
+        }
+        if (maximizing) {
+          let best = -Infinity;
+          for (const c of cols) {
+            apply(c, 1);
+            const v = minimax(depth - 1, false, a, b);
+            undo(c);
+            best = Math.max(best, v);
+            a = Math.max(a, best);
+            if (b <= a) break;
+          }
+          return best;
+        } else {
+          let best = Infinity;
+          for (const c of cols) {
+            apply(c, 0);
+            const v = minimax(depth - 1, true, a, b);
+            undo(c);
+            best = Math.min(best, v);
+            b = Math.min(b, best);
+            if (b <= a) break;
+          }
+          return best;
+        }
+      }
+
+      function apply(col, player) {
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (board[r][col] === -1) { board[r][col] = player; return; }
+        }
+      }
+
+      function undo(col) {
+        for (let r = 0; r < ROWS; r++) {
+          if (board[r][col] !== -1) { board[r][col] = -1; return; }
+        }
+      }
+
+      function aiMove() {
+        if (!active || current !== 1) return;
+        const cols = validCols();
+        if (!cols.length) return;
+        let bestCol = cols[0];
+        let bestScore = -Infinity;
+        for (const c of cols) {
+          apply(c, 1);
+          const score = minimax(5, false, -Infinity, Infinity);
+          undo(c);
+          if (score > bestScore) { bestScore = score; bestCol = c; }
+        }
+        drop(bestCol);
+      }
+
+      function queueAI() {
+        if (!active || current !== 1) return;
+        setTimeout(aiMove, 180);
+      }
+
+      boardEl.addEventListener('click', (e) => {
+        const cell = e.target.closest('.cell');
+        if (!cell || !active) return;
+        const col = Number(cell.dataset.col);
+        if (current === 1 && mode === 'ai') return;
+        drop(col);
+      });
+
+      newGameBtn.addEventListener('click', resetBoard);
+      shuffleBtn.addEventListener('click', resetBoard);
+
+      modeButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modeButtons.forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          mode = btn.dataset.mode;
+          resetBoard();
+        });
+      });
+
+      resetBoard();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Conway’s Game of Life — Watch cells live, die, and multiply under simple rules.">
+  <title>Game of Life — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #10b981; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #06b6d4; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(25px, -20px) scale(1.1); } }
+
+    .back-link {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 200ms ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.10); }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 6rem 1.5rem 2rem;
+      gap: 1.1rem;
+      max-width: 720px;
+      width: 100%;
+    }
+
+    .header { text-align: center; width: 100%; }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header p { color: #6b6b80; font-size: 0.9rem; margin-top: 0.25rem; }
+
+    canvas { display: block; width: 100%; max-width: 560px; aspect-ratio: 1/1; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: #040608; image-rendering: pixelated; }
+
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+      max-width: 560px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      text-align: center;
+      flex: 1;
+    }
+    .stat-card__label { font-size: 0.65rem; color: #6b6b80; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+    .stat-card__val { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 900; color: #f0f0f5; }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+      max-width: 560px;
+    }
+    .btn {
+      padding: 0.75rem 1.4rem;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      color: #09141a;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.25);
+    }
+    .btn--primary:hover { transform: translateY(-2px); }
+    .btn--ghost {
+      background: rgba(255,255,255,0.05);
+      color: #a0a0b8;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn--ghost:hover { color: #f0f0f5; background: rgba(255,255,255,0.08); }
+    .help-hint { color: #6b6b80; font-size: 0.8rem; text-align: center; max-width: 560px; }
+    @media (max-width: 480px) {
+      .container { padding: 5.5rem 1rem 1.5rem; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Game of Life</h1>
+      <p>Cellular automaton with surprising emergent patterns.</p>
+    </header>
+
+    <canvas id="canvas" aria-label="Game of Life grid"></canvas>
+
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-card__label">Generation</div><div class="stat-card__val" id="gen">0</div></div>
+      <div class="stat-card"><div class="stat-card__label">Population</div><div class="stat-card__val" id="pop">0</div></div>
+      <div class="stat-card"><div class="stat-card__label">Speed</div><div class="stat-card__val" id="speed">8</div></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn--primary" id="toggleBtn">Start</button>
+      <button class="btn btn--ghost" id="stepBtn">Step</button>
+      <button class="btn btn--ghost" id="clearBtn">Clear</button>
+      <button class="btn btn--ghost" id="randomBtn">Random</button>
+    </div>
+
+    <button class="btn btn--ghost" id="speedBtn">Speed: Normal</button>
+    <p class="help-hint">Click or drag to draw cells. Rules: underpopulation, survival, overcrowding, reproduction.</p>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const genEl = document.getElementById('gen');
+      const popEl = document.getElementById('pop');
+      const speedEl = document.getElementById('speed');
+      const toggleBtn = document.getElementById('toggleBtn');
+
+      let cols = 72;
+      let rows = 72;
+      let cellSize = 7;
+      let grid = makeGrid();
+      let running = false;
+      let generation = 0;
+      let tick = 0;
+      let interval = 90;
+      let raf = null;
+      let drawMode = false;
+
+      function makeGrid() {
+        return Array.from({ length: rows }, () => Array(cols).fill(0));
+      }
+
+      function randomize() {
+        grid = makeGrid();
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) grid[r][c] = Math.random() < 0.22 ? 1 : 0;
+        generation = 0;
+      }
+
+      function countNeighbors(x, y) {
+        let n = 0;
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const rr = (y + dr + rows) % rows;
+          const cc = (x + dc + cols) % cols;
+          n += grid[rr][cc];
+        }
+        return n;
+      }
+
+      function step() {
+        const next = makeGrid();
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const n = countNeighbors(c, r);
+          const live = grid[r][c] === 1;
+          if (live) next[r][c] = (n === 2 || n === 3) ? 1 : 0;
+          else next[r][c] = n === 3 ? 1 : 0;
+        }
+        grid = next;
+        generation += 1;
+      }
+
+      function population() {
+        let pop = 0;
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) pop += grid[r][c];
+        return pop;
+      }
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.floor(rect.width * dpr);
+        canvas.height = Math.floor(rect.height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cellSize = Math.max(4, Math.floor(Math.min(rect.width, rect.height) / Math.max(cols, rows)));
+      }
+
+      function draw() {
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        ctx.clearRect(0, 0, w, h);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            if (!grid[r][c]) continue;
+            const alpha = 0.55 + grid[r][c] * 0.45;
+            ctx.fillStyle = `rgba(52,211,153,${alpha})`;
+            ctx.fillRect(c * cellSize + 1, r * cellSize + 1, cellSize - 2, cellSize - 2);
+          }
+        }
+        genEl.textContent = generation;
+        popEl.textContent = population();
+      }
+
+      function loop() {
+        tick += 1;
+        if (tick * 16 >= interval) {
+          tick = 0;
+          step();
+        }
+        draw();
+        if (running) raf = requestAnimationFrame(loop);
+      }
+
+      function start() { if (!running) { running = true; toggleBtn.textContent = 'Pause'; loop(); } }
+      function pause() { running = false; if (raf) cancelAnimationFrame(raf); toggleBtn.textContent = 'Start'; draw(); }
+
+      function toggle() { running ? pause() : start(); }
+
+      function cellFromEvent(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const c = Math.floor(x / cellSize);
+        const r = Math.floor(y / cellSize);
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return null;
+        return { r, c };
+      }
+
+      function paint(e) {
+        const cell = cellFromEvent(e);
+        if (!cell) return;
+        grid[cell.r][cell.c] = 1;
+        draw();
+      }
+
+      canvas.addEventListener('mousedown', (e) => { drawMode = true; paint(e); });
+      window.addEventListener('mouseup', () => drawMode = false);
+      canvas.addEventListener('mousemove', (e) => { if (drawMode) paint(e); });
+      canvas.addEventListener('touchstart', (e) => { if (e.touches.length) paint(e.touches[0]); }, { passive: true });
+      canvas.addEventListener('touchmove', (e) => { if (e.touches.length) paint(e.touches[0]); }, { passive: true });
+
+      toggleBtn.addEventListener('click', toggle);
+      document.getElementById('stepBtn').addEventListener('click', () => { pause(); step(); draw(); });
+      document.getElementById('clearBtn').addEventListener('click', () => { pause(); grid = makeGrid(); generation = 0; draw(); });
+      document.getElementById('randomBtn').addEventListener('click', () => { pause(); randomize(); draw(); });
+      document.getElementById('speedBtn').addEventListener('click', () => {
+        interval = interval === 160 ? 40 : interval === 40 ? 180 : interval === 180 ? 60 : interval + 30;
+        speedEl.textContent = Math.max(1, Math.floor(1000 / interval));
+      });
+
+      window.addEventListener('resize', () => { resize(); draw(); });
+      randomize();
+      resize();
+      draw();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Idle Clicker — Tap to earn and buy upgrades that work for you. Free browser game on Eliyas Games.">
+  <title>Idle Clicker — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪙</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #EC4899; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #8B5CF6; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(25px, -20px) scale(1.09); } }
+
+    .back-link {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 200ms ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.1); }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 6rem 1.5rem 2rem;
+      gap: 1.25rem;
+      max-width: 720px;
+      width: 100%;
+    }
+
+    .header { text-align: center; width: 100%; }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p { color: #6b6b80; font-size: 0.9rem; margin-top: 0.25rem; }
+
+    .coin-display {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.4rem, 7vw, 3.4rem);
+      font-weight: 900;
+      color: #f0f0f5;
+    }
+    .coin-label { color: #a0a0b8; font-size: 0.85rem; }
+
+    .clicker {
+      margin-top: 0.5rem;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      border: none;
+      background: radial-gradient(circle at 30% 30%, #f59e0b, #b45309);
+      color: #1c1917;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(245, 158, 11, 0.35);
+      transition: transform 120ms ease, box-shadow 150ms ease;
+      position: relative;
+    }
+    .clicker:active { transform: scale(0.97); }
+    .clicker:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(245, 158, 11, 0.45); }
+    .clicker__icon { font-size: 3rem; display: block; }
+
+    .stats {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      text-align: center;
+      flex: 1;
+      min-width: 90px;
+    }
+    .stat-card__label { font-size: 0.65rem; color: #6b6b80; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .stat-card__val { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 800; color: #f0f0f5; }
+
+    .panel {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .upgrade {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .upgrade__info { display: flex; flex-direction: column; gap: 0.15rem; }
+    .upgrade__title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem; color: #f0f0f5; }
+    .upgrade__meta { color: #a0a0b8; font-size: 0.78rem; }
+    .upgrade__cost { font-weight: 800; color: #6ee7b7; white-space: nowrap; }
+    .btn {
+      padding: 0.55rem 1.1rem;
+      border-radius: 10px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+      white-space: nowrap;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      color: #fff;
+      box-shadow: 0 5px 14px rgba(236,72,153,0.35);
+    }
+    .btn--primary:hover { transform: translateY(-1px); box-shadow: 0 7px 18px rgba(236,72,153,0.45); }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      background: rgba(255,255,255,0.06);
+      color: #6b6b80;
+    }
+
+    .help-hint { color: #6b6b80; font-size: 0.8rem; text-align: center; }
+    @media (max-width: 520px) { .clicker { width: 180px; height: 180px; } }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Idle Clicker</h1>
+      <p>Tap the coin and buy upgrades that collect for you.</p>
+    </header>
+
+    <div class="coin-display" id="coins">0</div>
+    <div class="coin-label">coins</div>
+
+    <button class="clicker" id="clicker">
+      <span class="clicker__icon">🪙</span>
+      Tap
+    </button>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-card__label">Per Tap</div>
+        <div class="stat-card__val" id="power">1</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Auto/sec</div>
+        <div class="stat-card__val" id="autoSec">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Clicks</div>
+        <div class="stat-card__val" id="clicks">0</div>
+      </div>
+    </div>
+
+    <div class="panel" id="upgrades"></div>
+
+    <p class="help-hint">Upgrades stack. Close the tab? Progress stops, because this version is client-only.</p>
+  </div>
+
+  <script>
+    (function () {
+      const state = {
+        coins: 0,
+        clicks: 0,
+        power: 1,
+        income: 0, // coins per second total
+        clickCount: 0,
+        upgrades: {
+          cursor: { name: 'Cursor', baseCost: 15, count: 0, income: 1, desc: '+1 per second' },
+          bot: { name: 'Bot', baseCost: 100, count: 0, income: 5, desc: '+5 per second' },
+          farm: { name: 'Farm', baseCost: 500, count: 0, income: 25, desc: '+25 per second' },
+          lab: { name: 'Lab', baseCost: 2000, count: 0, income: 120, desc: '+120 per second' },
+          mine: { name: 'Mine', baseCost: 8000, count: 0, income: 600, desc: '+600 per second' },
+          vault: { name: 'Vault', baseCost: 35000, count: 0, income: 2500, desc: '+2500 per second' }
+        }
+      };
+
+      const els = {
+        coins: document.getElementById('coins'),
+        power: document.getElementById('power'),
+        autoSec: document.getElementById('autoSec'),
+        clicks: document.getElementById('clicks'),
+        clicker: document.getElementById('clicker'),
+        upgrades: document.getElementById('upgrades')
+      };
+
+      function cost(upgrade) {
+        return Math.floor(upgrade.baseCost * Math.pow(1.18, upgrade.count));
+      }
+
+      function totalIncome() {
+        return Object.values(state.upgrades).reduce((s, u) => s + u.count * u.income, 0);
+      }
+
+      function render() {
+        const income = totalIncome();
+        state.income = income;
+        els.coins.textContent = Math.floor(state.coins).toLocaleString();
+        els.power.textContent = state.power.toLocaleString();
+        els.autoSec.textContent = income.toLocaleString();
+        els.clicks.textContent = state.clicks.toLocaleString();
+
+        els.upgrades.innerHTML = Object.entries(state.upgrades)
+          .map(([key, u]) => {
+            const currentCost = cost(u);
+            const canBuy = state.coins >= currentCost;
+            return `
+              <div class="upgrade">
+                <div class="upgrade__info">
+                  <div class="upgrade__title">${u.name} <span style="color:#6b6b80;font-weight:600;font-size:0.85rem;">x${u.count}</span></div>
+                  <div class="upgrade__meta">${u.desc}</div>
+                </div>
+                <button class="btn btn--primary" data-upgrade="${key}" ${canBuy ? '' : 'disabled'}>${currentCost.toLocaleString()}🪙</button>
+              </div>
+            `;
+          })
+          .join('');
+      }
+
+      function buy(key) {
+        const u = state.upgrades[key];
+        if (!u) return;
+        const currentCost = cost(u);
+        if (state.coins < currentCost) return;
+        state.coins -= currentCost;
+        u.count += 1;
+        state.power += 1;
+        render();
+      }
+
+      els.upgrades.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-upgrade]');
+        if (!btn || btn.disabled) return;
+        buy(btn.dataset.upgrade);
+      });
+
+      els.clicker.addEventListener('click', () => {
+        state.coins += state.power;
+        state.clicks += 1;
+        render();
+      });
+
+      // Income tick every 1s
+      setInterval(() => {
+        const income = totalIncome();
+        if (!income) return;
+        state.coins += income;
+        render();
+      }, 1000);
+
+      render();
+    })();
+  </script>
+</body>
+</html>

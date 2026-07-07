@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Simple Tower Defense — Place towers and stop waves of enemies.">
+  <title>Tower Defense — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧱</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html,body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+    }
+    #gameCanvas { display: block; }
+
+    .hud {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 20;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      color: #d8f3dc;
+      text-shadow: 0 0 10px rgba(110, 231, 183, 0.3);
+    }
+    .hud__left, .hud__right { display: flex; gap: 1rem; align-items: center; pointer-events: auto; }
+
+    .back-link {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      text-decoration: none;
+      z-index: 20;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      backdrop-filter: blur(10px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(110,231,183,0.35); }
+
+    .controls {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      display: flex;
+      gap: 0.5rem;
+      z-index: 20;
+      flex-wrap: wrap;
+    }
+    .tower-btn, .action-btn {
+      padding: 0.55rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: #f0f0f5;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      cursor: pointer;
+    }
+    .tower-btn.active { border-color: rgba(110,231,183,0.6); background: rgba(110,231,183,0.1); }
+    .tower-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .action-btn:hover { background: rgba(255,255,255,0.05); }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,15,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 30;
+      color: #eaf2ff;
+      font-family: 'Space Mono', monospace;
+      text-align: center;
+      padding: 1.5rem;
+    }
+    .overlay__title { font-size: 2rem; font-weight: 700; }
+    .controls-hint { font-size: 0.8rem; color: #a0a0b8; line-height: 1.7; max-width: 420px; }
+    .btn {
+      padding: 0.7rem 1.3rem;
+      border-radius: 10px;
+      border: none;
+      background: rgba(110,231,183,0.15);
+      color: #eaf2ff;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn:hover { background: rgba(110,231,183,0.35); }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" aria-label="Tower defense game canvas"></canvas>
+  <a href="https://games.eliyas.xyz" class="back-link">← Games</a>
+  <div class="hud" id="hud">
+    <div class="hud__left">
+      <div>GOLD <span id="gold">120</span></div>
+      <div>LIVES <span id="lives">20</span></div>
+      <div>WAVE <span id="wave">1</span></div>
+    </div>
+    <div class="hud__right">
+      <div>TOWERS <span id="towers">0</span>/<span id="towerCap">8</span></div>
+    </div>
+  </div>
+  <div class="controls" id="controls">
+    <button class="tower-btn active" data-tower="0">Blaster 20</button>
+    <button class="tower-btn" data-tower="1">Slow 40</button>
+    <button class="tower-btn" data-tower="2">Sniper 80</button>
+    <button class="tower-btn" data-tower="3">Arc 140</button>
+    <button class="action-btn" id="startWaveBtn">Start Wave</button>
+  </div>
+  <div id="overlay">
+    <div class="overlay__title">TOWER DEFENSE</div>
+    <div class="controls-hint">
+      Select a tower, then click a buildable cell next to the path to place it.<br>
+      Survive waves. Enemies drop gold.
+    </div>
+    <button class="btn" id="startBtn">START</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const goldEl = document.getElementById('gold');
+      const livesEl = document.getElementById('lives');
+      const waveEl = document.getElementById('wave');
+      const towersCountEl = document.getElementById('towers');
+      const overlay = document.getElementById('overlay');
+      const statusEl = document.getElementById('status');
+      const startBtn = document.getElementById('startBtn');
+      const canvasEl = document.getElementById('gameCanvas');
+
+      let width, height;
+      let cols = 20;
+      let rows = 12;
+      let cellSize = 34;
+      let grid = [];
+      let pathTiles = [];
+      let towers = [];
+      let enemies = [];
+      let particles = [];
+      let bullets = [];
+
+      let gold = 120;
+      let lives = 20;
+      let wave = 1;
+      let active = false;
+      let selectedTower = 0;
+      let waveActive = false;
+      let spawned = 0;
+      let spawnBudget = 0;
+      let spawnTimer = 0;
+      let gameOver = false;
+      let hoverCell = null;
+
+      const TILE_ROAD = 0, TILE_BUILD = 1, TILE_BLOCK = 2;
+
+      const TOWER_DEFS = [
+        { name: 'Blaster', cost: 20, range: 90, speed: 0.21, power: 9, color: '#10b981', style: 'single' },
+        { name: 'Slow', cost: 40, range: 72, speed: 0.17, power: 3, color: '#38bdf8', style: 'slow' },
+        { name: 'Sniper', cost: 80, range: 150, speed: 0.11, power: 24, color: '#ec4899', style: 'single' },
+        { name: 'Arc', cost: 140, range: 78, speed: 0.14, power: 12, color: '#fbbf24', style: 'arc' }
+      ];
+
+      function buildMap() {
+        grid = Array.from({ length: rows }, () => Array(cols).fill(TILE_BLOCK));
+        const cy = Math.floor(rows / 2);
+        const path = [];
+        let c = 0, r = cy;
+        path.push([r,c]);
+        while (c < cols - 1) {
+          const dirs = [];
+          dirs.push([0,1]);
+          if (r > 1) dirs.push([-1,0]);
+          if (r < rows - 2) dirs.push([1,0]);
+          const pick = dirs[Math.floor(Math.random() * dirs.length)];
+          r = Math.max(1, Math.min(rows - 2, r + pick[0]));
+          c = Math.min(cols - 1, c + pick[1]));
+          path.push([r,c]);
+        }
+        pathTiles = path;
+        for (const [r,c] of path) grid[r][c] = TILE_ROAD;
+      }
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        cellSize = Math.max(22, Math.floor(Math.min(width, height * 1.1) / Math.max(cols, rows)));
+      }
+
+      function neighbors4(r,c) {
+        return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([rr,cc]) => rr>=0 && rr<rows && cc>=0 && cc<cols);
+      }
+
+      function findPlacements() {
+        const buildable = new Set();
+        for (const [r,c] of pathTiles) {
+          for (const [rr,cc] of neighbors4(r,c)) if (grid[rr][cc] === TILE_BUILD && !towers.some(t => t.r === rr && t.c === cc)) buildable.add(rr + ',' + cc);
+        }
+        return buildable;
+      }
+
+      function addTower(r,c,typeIdx) {
+        const type = TOWER_DEFS[typeIdx];
+        if (gold < type.cost) return;
+        if (towers.length >= 12) return;
+        towers.push({ r, c, typeIdx, cooldown: 0, angle: 0 });
+        gold -= type.cost;
+        updateHUD();
+        draw();
+      }
+
+      function updateHUD() {
+        goldEl.textContent = gold;
+        livesEl.textContent = lives;
+        waveEl.textContent = wave;
+        towersCountEl.textContent = towers.length;
+        document.getElementById('towers').textContent = towers.length;
+        document.getElementById('towerCap').textContent = 12;
+      }
+
+      function enemiesRemaining() {
+        return enemies.filter(e => e.hp > 0).length;
+      }
+
+      function spawnWave() {
+        if (waveActive) return;
+        spawnBudget = 6 + Math.floor(wave * 2.3);
+        spawned = 0;
+        waveActive = true;
+      }
+
+      function spawnEnemy() {
+        if (!pathTiles.length) return;
+        const [r,c] = pathTiles[0];
+        const hp = 35 + wave * 24 + Math.floor(Math.random()*20);
+        enemies.push({ pathIndex: 0, hp, maxHp: hp, speed: 0.7 + wave * 0.08 + Math.random() * 0.1, slow: 0 });
+      }
+
+      function update() {
+        if (gameOver) return;
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          const e = enemies[i];
+          if (e.hp <= 0) {
+            gold += 6;
+            for (let k = 0; k < 8; k++) particles.push({ x: e.x || 0, y: e.y || 0, vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6, life: 26, color: '#fbbf24' });
+            enemies.splice(i,1);
+            updateHUD();
+            continue;
+          }
+          const step = (e.slow > 0 ? e.speed * 0.55 : e.speed);
+          e.pathIndex += step * 0.08;
+          if (e.pathIndex >= pathTiles.length - 1) {
+            lives -= 1;
+            enemies.splice(i,1);
+            updateHUD();
+            if (lives <= 0) { gameover(); return; }
+            continue;
+          }
+          const idx = Math.min(pathTiles.length - 1, Math.floor(e.pathIndex));
+          const nextIdx = Math.min(pathTiles.length - 1, idx + 1);
+          const [pr, pc] = pathTiles[idx];
+          const [nr, nc] = pathTiles[nextIdx];
+          const t = e.pathIndex - idx;
+          e.x = (pc + (nc - pc) * t) * cellSize + cellSize/2;
+          e.y = (pr + (nr - pr) * t) * cellSize + cellSize/2;
+          if (e.slow > 0) e.slow -= 1;
+        }
+
+        if (waveActive) {
+          spawnTimer += 1;
+          const delay = Math.max(18, 70 - wave * 3);
+          if (spawned < spawnBudget && spawnTimer >= delay) {
+            spawnTimer = 0;
+            spawnEnemy();
+            spawned += 1;
+          }
+          if (spawned >= spawnBudget && enemies.length === 0) {
+            waveActive = false;
+            wave += 1;
+            if (wave % 3 === 0) updateHUD();
+          }
+        }
+
+        for (const t of towers) {
+          t.cooldown = Math.max(0, (t.cooldown || 0) - 1);
+          const def = TOWER_DEFS[t.typeIdx];
+          let target = null;
+          let best = -Infinity;
+          for (const e of enemies) {
+            const dist = Math.hypot(e.x - (t.c * cellSize + cellSize/2), e.y - (t.r * cellSize + cellSize/2));
+            if (dist <= def.range) {
+              const pri = -e.pathIndex + (e.hp / e.maxHp) * 10;
+              if (pri > best) { best = pri; target = e; }
+            }
+          }
+          if (target && t.cooldown <= 0) {
+            t.cooldown = Math.floor(280 / (def.speed * 240));
+            const sx = t.c * cellSize + cellSize/2;
+            const sy = t.r * cellSize + cellSize/2;
+            const angle = Math.atan2(target.y - sy, target.x - sx);
+            t.angle = angle;
+            if (def.style === 'arc') {
+              for (const e2 of enemies) {
+                const d2 = Math.hypot(e2.x - sx, e2.y - sy);
+                if (d2 <= def.range) {
+                  e2.hp -= def.power;
+                  e2.slow = 35;
+                }
+              }
+              for (let k = 0; k < 12; k++) particles.push({ x: sx, y: sy, vx: Math.cos(angle + (Math.random()-0.5))*5, vy: Math.sin(angle + (Math.random()-0.5))*5, life: 22, color: '#fbbf24' });
+            } else {
+              bullets.push({ x: sx, y: sy, vx: Math.cos(angle) * 8, vy: Math.sin(angle) * 8, color: def.color, life: 70, power: def.power });
+              if (def.style === 'slow') particles.push({ x: sx, y: sy, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, life: 14, color: '#38bdf8' });
+            }
+            updateHUD();
+          }
+        }
+
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          const b = bullets[i];
+          b.x += b.vx;
+          b.y += b.vy;
+          b.life -= 1;
+          let hit = false;
+          for (const e of enemies) {
+            if (Math.hypot(e.x - b.x, e.y - b.y) < cellSize * 0.75) {
+              e.hp -= b.power;
+              if (b.color === TOWER_DEFS[1].color) e.slow = 35;
+              hit = true;
+              break;
+            }
+          }
+          if (b.life <= 0 || hit) bullets.splice(i,1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.95;
+          p.vy *= 0.95;
+          p.life -= 1;
+          if (p.life <= 0) particles.splice(i,1);
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#07080f';
+        ctx.fillRect(0,0,width,height);
+
+        const offsetX = Math.floor((width - cols * cellSize) / 2);
+        const offsetY = Math.floor((height - rows * cellSize) / 2);
+
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const x = c * cellSize, y = r * cellSize;
+          const isPath = grid[r][c] === TILE_ROAD;
+          const isPlacement = grid[r][c] === TILE_BUILD;
+          ctx.fillStyle = isPath ? '#121724' : '#11121b';
+          ctx.fillRect(x, y, cellSize - 1, cellSize - 1);
+          if (isPlacement) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+            ctx.strokeRect(x + 1, y + 1, cellSize - 3, cellSize - 3);
+          }
+        }
+        for (const t of towers) {
+          const def = TOWER_DEFS[t.typeIdx];
+          cx = t.c * cellSize + cellSize/2;
+          cy = t.r * cellSize + cellSize/2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, cellSize * 0.38, 0, Math.PI * 2);
+          ctx.fillStyle = def.color;
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(t.angle) * cellSize * 0.55, cy + Math.sin(t.angle) * cellSize * 0.55);
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1.8;
+          ctx.stroke();
+        }
+        for (const e of enemies) {
+          const hp = Math.max(0, e.hp / e.maxHp);
+          ctx.fillStyle = '#f87171';
+          ctx.fillRect(e.x - cellSize*0.45, e.y - cellSize*0.5, cellSize*0.9 * hp, 4);
+          ctx.fillStyle = '#ffe4e6';
+          ctx.fillRect(e.x - cellSize*0.45, e.y - cellSize*0.5, cellSize*0.9, 4);
+        }
+        for (const b of bullets) {
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = b.color;
+          ctx.fill();
+        }
+        for (const p of particles) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
+          ctx.fillStyle = p.color.replace(')', `,${p.life/30})`).replace('rgb', 'rgba');
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function gameover() {
+        gameOver = true;
+        overlay.style.display = 'flex';
+        statusEl.textContent = 'Survived ' + wave + ' waves. Gold: ' + gold;
+        startBtn.textContent = 'RETRY';
+      }
+
+      function reset() {
+        gold = 120;
+        lives = 20;
+        wave = 1;
+        towers = [];
+        enemies = [];
+        particles = [];
+        bullets = [];
+        waveActive = false;
+        spawnBudget = 0;
+        gameOver = false;
+        active = true;
+        buildMap();
+        updateHUD();
+        moveOverlay(true);
+      }
+
+      function moveOverlay(hidden) {
+        overlay.style.display = hidden ? 'none' : 'flex';
+      }
+
+      function loop(time) {
+        if (!active) return;
+        const dt = Math.min(33, time - last) / 16.67;
+        last = time;
+
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      function cellFromMouse(evt) {
+        const offsetX = Math.floor((width - cols * cellSize) / 2);
+        const offsetY = Math.floor((height - rows * cellSize) / 2);
+        const x = evt.clientX - offsetX;
+        const y = evt.clientY - offsetY;
+        const c = Math.floor(x / cellSize);
+        const r = Math.floor(y / cellSize);
+        if (r < 0 || r >= rows || c < 0 || c >= cols) return null;
+        return { r, c };
+      }
+
+      canvas.addEventListener('mousemove', (e) => {
+        hoverCell = cellFromMouse(e);
+      });
+      canvas.addEventListener('mouseleave', () => hoverCell = null);
+
+      canvas.addEventListener('mousedown', (e) => {
+        if (gameOver || !active) return;
+        const cell = cellFromMouse(e);
+        if (!cell) return;
+        const placements = findPlacements();
+        if (placements.has(cell.r + ',' + cell.c)) addTower(cell.r, cell.c, selectedTower);
+      });
+
+      document.querySelectorAll('.tower-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tower-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedTower = Number(btn.dataset.tower);
+        });
+      });
+
+      startBtn.addEventListener('click', reset);
+      document.getElementById('startWaveBtn').addEventListener('click', () => {
+        if (!active || gameOver) return;
+        spawnWave();
+      });
+
+      window.addEventListener('resize', resize);
+
+      resize();
+      buildMap();
+      updateHUD();
+      draw();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

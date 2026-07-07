@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Trivia Quiz — Test your knowledge across tech, space, history, and more.">
+  <title>Trivia Quiz — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #EC4899; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #8B5CF6; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(25px, -20px) scale(1.09); } }
+    .back-link {
+      position: fixed; top: 1.25rem; left: 1.25rem; display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1rem; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8; font-size: 0.85rem; font-weight: 500; text-decoration: none; transition: all 200ms ease; z-index: 100; backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.1); }
+    .container { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 6rem 1.5rem 2rem; gap: 1.1rem; max-width: 640px; width: 100%; }
+    .header { text-align: center; width: 100%; }
+    .header h1 { font-family: 'Outfit', sans-serif; font-size: clamp(2rem, 6vw, 2.8rem); font-weight: 900; letter-spacing: -0.03em; background: linear-gradient(135deg, #EC4899, #8B5CF6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .header p { color: #6b6b80; font-size: 0.92rem; margin-top: 0.25rem; }
+    .stats-bar { display: flex; gap: 1rem; justify-content: center; width: 100%; }
+    .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 0.5rem 1rem; border-radius: 12px; text-align: center; flex: 1; min-width: 80px; }
+    .stat-card__label { font-size: 0.65rem; color: #6b6b80; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .stat-card__val { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800; color: #f0f0f5; }
+    .card { width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 1.1rem; display: flex; flex-direction: column; gap: 0.8rem; }
+    .q { font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; line-height: 1.55; }
+    .category { color: #a0a0b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+    .options { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+    .opt { padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #f0f0f5; font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 150ms ease; text-align: left; }
+    .opt:hover:not(:disabled) { background: rgba(236, 72, 153, 0.08); border-color: rgba(236, 72, 153, 0.45); transform: translateY(-1px); }
+    .opt.correct { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.6); color: #6ee7b7; }
+    .opt.wrong { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; }
+    .opt:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .bar { width: 100%; height: 10px; border-radius: 10px; background: rgba(255,255,255,0.06); overflow: hidden; }
+    .bar > i { display: block; height: 100%; background: linear-gradient(135deg, #EC4899, #8B5CF6); border-radius: 10px; transition: width 250ms ease; }
+    .row { display: flex; gap: 1rem; width: 100%; justify-content: center; }
+    .btn { padding: 0.75rem 2rem; border-radius: 12px; border: none; font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 150ms ease; }
+    .btn--primary { background: linear-gradient(135deg, #EC4899, #8B5CF6); color: #fff; box-shadow: 0 4px 16px rgba(236,72,153,0.3); }
+    .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(236,72,153,0.45); }
+    .overlay { position: absolute; inset: -4px; border-radius: 20px; background: rgba(10,10,15,0.92); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; opacity: 0; visibility: hidden; transition: all 300ms ease; z-index: 10; border: 1px solid rgba(255,255,255,0.08); padding: 1.5rem; text-align: center; }
+    .wrapper { position: relative; width: 100%; }
+    .overlay.visible { opacity: 1; visibility: visible; }
+    .overlay__emoji { font-size: 3.5rem; animation: floatEmoji 2s ease-in-out infinite; }
+    .overlay__title { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: #f0f0f5; }
+    .overlay__text { color: #a0a0b8; font-size: 0.95rem; line-height: 1.6; }
+    @keyframes floatEmoji { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .help { color: #6b6b80; font-size: 0.8rem; text-align: center; }
+    @media (max-width: 480px) { .container { padding: 5rem 1rem 1.5rem; gap: 1rem; } }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+  <div class="container">
+    <header class="header">
+      <h1>Trivia Quiz</h1>
+      <p>10 quick questions. How many can you get right?</p>
+    </header>
+    <div class="stats-bar">
+      <div class="stat-card"><div class="stat-card__label">Score</div><div class="stat-card__val" id="score">0</div></div>
+      <div class="stat-card"><div class="stat-card__label">Question</div><div class="stat-card__val" id="qnum">1/10</div></div>
+      <div class="stat-card"><div class="stat-card__label">Streak</div><div class="stat-card__val" id="streak">0</div></div>
+    </div>
+    <div class="bar"><i id="prog" style="width:0%"></i></div>
+    <div class="wrapper">
+      <div class="card" id="card">
+        <div class="category" id="category">Category</div>
+        <div class="q" id="question">Loading…</div>
+        <div class="options" id="options"></div>
+      </div>
+      <div class="overlay" id="overlay">
+        <div class="overlay__emoji" id="overlayEmoji">🧠</div>
+        <div class="overlay__title" id="overlayTitle">Done</div>
+        <div class="overlay__text" id="overlayText">You scored -- out of 10.</div>
+        <button class="btn btn--primary" id="newGameBtn">Play Again</button>
+      </div>
+    </div>
+    <p class="help">Tap an answer to lock it in. A new set picks each game.</p>
+  </div>
+  <script>
+    (function () {
+      const POOL = [
+        { q: 'Which language is primarily used for web page structure?', opts: ['Python', 'HTML', 'C++', 'Java'], a: 1, category: 'Web' },
+        { q: 'What does CPU stand for?', opts: ['Central Program Unit', 'Central Processing Unit', 'Computer Personal Unit', 'Control Program Utility'], a: 1, category: 'Hardware' },
+        { q: 'Which planet is known as the Red Planet?', opts: ['Venus', 'Jupiter', 'Mars', 'Saturn'], a: 2, category: 'Space' },
+        { q: 'Who painted the Mona Lisa?', opts: ['Van Gogh', 'Da Vinci', 'Picasso', 'Michelangelo'], a: 1, category: 'Art' },
+        { q: 'What is the powerhouse of the cell?', opts: ['Nucleus', 'Ribosome', 'Mitochondria', 'Cytoplasm'], a: 2, category: 'Science' },
+        { q: 'Which ocean is the largest?', opts: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], a: 3, category: 'Geography' },
+        { q: 'What year did the first Moon landing occur?', opts: ['1965', '1969', '1972', '1959'], a: 1, category: 'History' },
+        { q: 'Which data structure uses LIFO order?', opts: ['Queue', 'Array', 'Stack', 'Linked List'], a: 2, category: 'CS' },
+        { q: 'HTTP over TLS is commonly known as?', opts: ['FTP', 'SMTP', 'HTTPS', 'SSH'], a: 2, category: 'Networking' },
+        { q: 'What gas do plants absorb from the atmosphere?', opts: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'], a: 1, category: 'Biology' },
+        { q: 'Which country hosted the 2016 Summer Olympics?', opts: ['China', 'UK', 'Brazil', 'Japan'], a: 2, category: 'Sports' },
+        { q: 'Which HTML tag is used for the largest heading?', opts: ['<heading>', '<h6>', '<h1>', '<head>'], a: 2, category: 'Web' },
+        { q: 'Which protocol is used for secure remote login?', opts: ['HTTP', 'FTP', 'SSH', 'DNS'], a: 2, category: 'Networking' },
+        { q: 'A binary digit is called a?', opts: ['Bit', 'Byte', 'Nibble', 'Word'], a: 0, category: 'CS' },
+        { q: 'What force keeps planets in orbit?', opts: ['Magnetism', 'Gravity', 'Friction', 'Tension'], a: 1, category: 'Physics' },
+        { q: 'What is the fastest land animal?', opts: ['Lion', 'Cheetah', 'Horse', 'Tiger'], a: 1, category: 'Animals' },
+        { q: 'What is 2^10?', opts: ['512', '1024', '2048', '256'], a: 1, category: 'Math' },
+        { q: 'React is primarily a library for building?', opts: ['Databases', 'UIs', 'APIs', 'CLI tools'], a: 1, category: 'Web' },
+        { q: 'What device converts AC to DC?', opts: ['Transformer', 'Rectifier', 'Inverter', 'Capacitor'], a: 1, category: 'Hardware' },
+        { q: 'What is the smallest prime number?', opts: ['0', '1', '2', '3'], a: 2, category: 'Math' }
+      ];
+
+      const TOTAL = 10;
+      const qEl = document.getElementById('question');
+      const optsEl = document.getElementById('options');
+      const catEl = document.getElementById('category');
+      const scoreEl = document.getElementById('score');
+      const qnumEl = document.getElementById('qnum');
+      const streakEl = document.getElementById('streak');
+      const progEl = document.getElementById('prog');
+      const cardEl = document.getElementById('card');
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+      const overlayText = document.getElementById('overlayText');
+      const overlayEmoji = document.getElementById('overlayEmoji');
+      const newGameBtn = document.getElementById('newGameBtn');
+
+      let pool = [];
+      let idx = 0;
+      let score = 0;
+      let streak = 0;
+      let best = 0;
+      let answered = false;
+
+      function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+        return a;
+      }
+
+      function load() {
+        pool = shuffle(POOL).slice(0, TOTAL);
+        idx = 0;
+        score = 0;
+        streak = 0;
+        answered = false;
+        overlay.classList.remove('visible');
+        updateStats();
+        render();
+      }
+
+      function updateStats() {
+        scoreEl.textContent = score;
+        qnumEl.textContent = (idx + 1) + '/' + TOTAL;
+        streakEl.textContent = streak;
+        progEl.style.width = (idx / TOTAL) * 100 + '%';
+      }
+
+      function render() {
+        if (idx >= pool.length) {
+          end();
+          return;
+        }
+        answered = false;
+        const item = pool[idx];
+        catEl.textContent = item.category;
+        qEl.textContent = item.q;
+        optsEl.innerHTML = item.opts.map((o, i) => '<button class="opt" data-idx="' + i + '">' + o + '</button>').join('');
+        optsEl.querySelectorAll('.opt').forEach((btn) => {
+          btn.addEventListener('click', () => answer(Number(btn.dataset.idx)));
+        });
+        cardEl.style.display = '';
+      }
+
+      function answer(chosen) {
+        if (answered) return;
+        answered = true;
+        const item = pool[idx];
+        const buttons = optsEl.querySelectorAll('.opt');
+        buttons.forEach((btn, i) => {
+          btn.disabled = true;
+          if (i === item.a) btn.classList.add('correct');
+          if (i === chosen && i !== item.a) btn.classList.add('wrong');
+        });
+
+        if (chosen === item.a) {
+          score += 1;
+          streak += 1;
+        } else {
+          streak = 0;
+        }
+        updateStats();
+        setTimeout(() => {
+          idx += 1;
+          render();
+        }, 650);
+      }
+
+      function end() {
+        cardEl.style.display = 'none';
+        progEl.style.width = '100%';
+        overlayEmoji.textContent = score === TOTAL ? '🏆' : score >= 7 ? '🎉' : score >= 4 ? '👍' : '🧩';
+        overlayTitle.textContent = score >= 7 ? 'Great Job' : score >= 4 ? 'Nice Try' : 'Keep Practicing';
+        overlayText.textContent = 'You scored ' + score + ' out of ' + TOTAL + '.';
+        overlay.classList.add('visible');
+      }
+
+      newGameBtn.addEventListener('click', load);
+      load();
+    })();
+  </script>
+</body>
+</html>

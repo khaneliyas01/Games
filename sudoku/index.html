@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sudoku — Fill the 9x9 grid with digits 1-9 so every row, column, and box contains each digit once.">
+  <title>Sudoku — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔢</text></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #EC4899; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #8B5CF6; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(25px, -20px) scale(1.1); } }
+
+    .back-link {
+      position: fixed;
+      top: 1.25rem;
+      left: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 200ms ease;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(236, 72, 153, 0.4); background: rgba(236, 72, 153, 0.1); }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 6rem 1.5rem 2rem;
+      gap: 1.25rem;
+      max-width: 560px;
+      width: 100%;
+    }
+
+    .header { text-align: center; width: 100%; }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header p { color: #6b6b80; font-size: 0.9rem; margin-top: 0.25rem; }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 0;
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 1/1;
+      border: 2px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .cell {
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.02);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1rem, 4.5vw, 1.4rem);
+      font-weight: 800;
+      color: #f0f0f5;
+      cursor: pointer;
+      user-select: none;
+      transition: background 120ms ease;
+    }
+    .cell:hover { background: rgba(236, 72, 153, 0.12); }
+    .cell.fixed {
+      color: #7ec9ff;
+      background: rgba(126,201,255,0.05);
+      cursor: default;
+    }
+    .cell.same {
+      background: rgba(236, 72, 153, 0.10);
+    }
+    .cell.related {
+      background: rgba(139,92,246,0.08);
+    }
+
+    .cell:nth-child(3n) { border-right: 2px solid rgba(255,255,255,0.25); }
+    .cell:nth-child(9n) { border-right: none; }
+    .cell:nth-child(n+19):nth-child(-n+27),
+    .cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid rgba(255,255,255,0.25); }
+    .cell:nth-last-child(-n+9) { border-bottom: none; }
+
+    .numpad {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 420px;
+      width: 100%;
+    }
+    .key {
+      width: 54px;
+      height: 54px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #f0f0f5;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 120ms ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .key:hover { transform: translateY(-2px); border-color: rgba(236, 72, 153, 0.5); }
+    .key.active { background: linear-gradient(135deg, #EC4899, #8B5CF6); color: #fff; border-color: transparent; }
+
+    .actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      width: 100%;
+      max-width: 420px;
+    }
+    .btn {
+      padding: 0.75rem 2rem;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #EC4899, #8B5CF6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(236,72,153,0.3);
+    }
+    .btn--primary:hover { transform: translateY(-2px); }
+    .btn--ghost {
+      background: rgba(255,255,255,0.05);
+      color: #a0a0b8;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn--ghost:hover { color: #f0f0f5; background: rgba(255,255,255,0.08); }
+    .overlay {
+      position: absolute;
+      inset: -4px;
+      border-radius: 20px;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 300ms ease;
+      z-index: 10;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .board-wrapper { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+    .overlay.visible { opacity: 1; visibility: visible; }
+    .overlay__emoji { font-size: 3.5rem; animation: floatEmoji 2s ease-in-out infinite; }
+    .overlay__title { font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 900; color: #f0f0f5; }
+    .overlay__text { color: #a0a0b8; font-size: 0.95rem; line-height: 1.6; }
+    @keyframes floatEmoji { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .help-hint { color: #6b6b80; font-size: 0.8rem; text-align: center; max-width: 420px; }
+    @media (max-width: 480px) {
+      .container { padding: 5.5rem 1rem 1.5rem; gap: 1rem; }
+      .key { width: 42px; height: 44px; font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Sudoku</h1>
+      <p>Fill every row, column, and box with numbers 1–9.</p>
+    </header>
+
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+      <div class="overlay" id="overlay">
+        <div class="overlay__emoji">🎉</div>
+        <div class="overlay__title">Solved</div>
+        <div class="overlay__text">Nice logical work.</div>
+        <button class="btn btn--primary" id="newBtn">New Puzzle</button>
+      </div>
+    </div>
+
+    <div class="numpad" id="numpad"></div>
+
+    <div class="actions">
+      <button class="btn btn--primary" id="newBtnAlt">New Puzzle</button>
+      <button class="btn btn--ghost" id="clearBtn">Clear</button>
+    </div>
+    <p class="help-hint">Tap a cell then tap a number. Use the on-screen keys or your keyboard 1–9.</p>
+  </div>
+
+  <script>
+    (function () {
+      const boardEl = document.getElementById('board');
+      const numpadEl = document.getElementById('numpad');
+      const overlay = document.getElementById('overlay');
+
+      let solution = [];
+      let puzzle = [];
+      let user = [];
+      let fixed = [];
+      let selected = null;
+
+      function randSeq(n) {
+        const a = Array.from({ length: n }, (_, i) => i + 1);
+        for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+        return a;
+      }
+
+      function valid(grid, r, c, v) {
+        for (let i = 0; i < 9; i++) if (grid[r][i] === v || grid[i][c] === v) return false;
+        const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+        for (let i = br; i < br + 3; i++) for (let j = bc; j < bc + 3; j++) if (grid[i][j] === v) return false;
+        return true;
+      }
+
+      function fill(grid) {
+        for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+          if (grid[r][c] === 0) {
+            const cands = randSeq(9);
+            for (const v of cands) if (valid(grid, r, c, v)) { grid[r][c] = v; if (!fill(grid)) grid[r][c] = 0; else return true; }
+            return false;
+          }
+        }
+        return true;
+      }
+
+      function makeSolution() {
+        const grid = Array.from({ length: 9 }, () => Array(9).fill(0));
+        fill(grid);
+        return grid;
+      }
+
+      function cloneGrid(g) { return g.map(row => row.slice()); }
+
+      function carve(g, holes = 38) {
+        const cp = cloneGrid(g);
+        let placed = 0;
+        while (placed < holes) {
+          const r = Math.floor(Math.random() * 9);
+          const c = Math.floor(Math.random() * 9);
+          if (cp[r][c] !== 0) { cp[r][c] = 0; placed++; }
+        }
+        return cp;
+      }
+
+      function newGame() {
+        solution = makeSolution();
+        puzzle = carve(solution, 38);
+        user = cloneGrid(puzzle);
+        fixed = puzzle.map(row => row.map(v => v !== 0 ? 1 : 0));
+        selected = null;
+        overlay.classList.remove('visible');
+        render();
+      }
+
+      function render() {
+        boardEl.innerHTML = '';
+        let clsIndex = 0;
+        for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('button');
+          cell.className = 'cell';
+          cell.type = 'button';
+          cell.textContent = user[r][c] ? user[r][c] : '';
+          if (fixed[r][c]) cell.classList.add('fixed');
+          if (selected && (r === selected.r || c === selected.c || (Math.floor(r/3)===Math.floor(selected.r/3) && Math.floor(c/3)===Math.floor(selected.c/3)))) cell.classList.add('related');
+          if (selected && r === selected.r && c === selected.c) cell.classList.add('same');
+          cell.dataset.r = String(r);
+          cell.dataset.c = String(c);
+          boardEl.appendChild(cell);
+        }
+      }
+
+      function selectCell(r, c) {
+        selected = { r, c };
+        render();
+      }
+
+      function place(v) {
+        if (!selected) return;
+        const { r, c } = selected;
+        if (fixed[r][c]) return;
+        user[r][c] = user[r][c] === v ? 0 : v;
+        render();
+        if (checkWin()) { overlay.classList.add('visible'); }
+      }
+
+      function checkWin() {
+        for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (user[r][c] !== solution[r][c]) return false;
+        return true;
+      }
+
+      boardEl.addEventListener('click', (e) => {
+        const cell = e.target.closest('.cell');
+        if (!cell) return;
+        const r = Number(cell.dataset.r);
+        const c = Number(cell.dataset.c);
+        if (user[r][c] && fixed[r][c]) return;
+        selectCell(r, c);
+      });
+
+      numpadEl.innerHTML = [1,2,3,4,5,6,7,8,9].map((n) => `<button class="key" data-num="${n}" type="button">${n}</button>`).join('');
+      numpadEl.addEventListener('click', (e) => {
+        const key = e.target.closest('.key');
+        if (!key) return;
+        place(Number(key.dataset.num));
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key >= '1' && e.key <= '9') place(Number(e.key));
+      });
+
+      document.getElementById('newBtn').addEventListener('click', newGame);
+      document.getElementById('newBtnAlt').addEventListener('click', newGame);
+      document.getElementById('clearBtn').addEventListener('click', () => {
+        user = cloneGrid(puzzle);
+        selected = null;
+        overlay.classList.remove('visible');
+        render();
+      });
+
+      newGame();
+    })();
+  </script>
+</body>
+</html>

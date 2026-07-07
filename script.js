@@ -197,6 +197,78 @@ const GAMES = [
     status: 'playable',
     accentColor: '#EC4899',
     bgGradient: 'linear-gradient(135deg, #831843, #EC4899)'
+  },
+  {
+    id: 'trivia-quiz',
+    title: 'Trivia Quiz',
+    emoji: '🧠',
+    description: '10 quick questions. How many can you get right?',
+    category: 'quiz',
+    difficulty: 'easy',
+    path: 'trivia-quiz/',
+    status: 'playable',
+    accentColor: '#F59E0B',
+    bgGradient: 'linear-gradient(135deg, #1c1917, #292524)'
+  },
+  {
+    id: 'idle-clicker',
+    title: 'Idle Clicker',
+    emoji: '🪙',
+    description: 'Tap a coin and buy upgrades that generate coins for you.',
+    category: 'idle',
+    difficulty: 'easy',
+    path: 'idle-clicker/',
+    status: 'playable',
+    accentColor: '#F59E0B',
+    bgGradient: 'linear-gradient(135deg, #1c1917, #292524)'
+  },
+  {
+    id: 'asteroids',
+    title: 'Asteroids',
+    emoji: '🚀',
+    description: 'Pilot a ship through an asteroid field and blast rocks into smaller pieces.',
+    category: 'arcade',
+    difficulty: 'medium',
+    path: 'asteroids/',
+    status: 'playable',
+    accentColor: '#7ec9ff',
+    bgGradient: 'linear-gradient(135deg, #05060f, #0b0f24)'
+  },
+  {
+    id: '15-puzzle',
+    title: '15 Puzzle',
+    emoji: '🧩',
+    description: 'Slide the numbered tiles into numerical order with the empty space.',
+    category: 'puzzle',
+    difficulty: 'easy',
+    path: '15-puzzle/',
+    status: 'playable',
+    accentColor: '#3B82F6',
+    bgGradient: 'linear-gradient(135deg, #0f172a, #1e293b)'
+  },
+  {
+    id: 'blackjack',
+    title: 'Blackjack',
+    emoji: '♠️',
+    description: 'Beat the dealer by getting closest to 21 without busting.',
+    category: 'card',
+    difficulty: 'medium',
+    path: 'blackjack/',
+    status: 'playable',
+    accentColor: '#10b981',
+    bgGradient: 'linear-gradient(135deg, #0f172a, #064e3b)'
+  },
+  {
+    id: 'solitaire',
+    title: 'Klondike Solitaire',
+    emoji: '🃏',
+    description: 'Move cards onto foundations and clear the tableau one pile at a time.',
+    category: 'card',
+    difficulty: 'hard',
+    path: 'solitaire/',
+    status: 'playable',
+    accentColor: '#ec4899',
+    bgGradient: 'linear-gradient(135deg, #20122a, #5b21b6)'
   }
 ];
 
