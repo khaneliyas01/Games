@@ -1,16 +1,540 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Invaders</title>
-    <link rel="stylesheet" href="../style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Space Invaders — Defend Earth from relentless neon alien invaders. Free retro arcade browser game on Eliyas Games.">
+  <title>Space Invaders — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👾</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #f0f0f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      touch-action: none;
+    }
+
+    /* --- Ambient Glow --- */
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; z-index: 0; }
+    .glow--1 { width: 500px; height: 500px; background: #10B981; top: -150px; left: -100px; animation: floatGlow 12s ease-in-out infinite; }
+    .glow--2 { width: 400px; height: 400px; background: #3B82F6; bottom: -100px; right: -100px; animation: floatGlow 15s ease-in-out infinite reverse; }
+    @keyframes floatGlow { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(25px, -20px) scale(1.1); } }
+
+    /* --- Back Link --- */
+    .back-link {
+      position: fixed; top: 1.25rem; left: 1.25rem;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1rem; border-radius: 10px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      color: #a0a0b8; font-size: 0.85rem; font-weight: 500;
+      text-decoration: none; transition: all 200ms ease; z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .back-link:hover { color: #f0f0f5; border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1); }
+
+    /* --- Layout Container --- */
+    .container {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh;
+      padding: 5rem 1.5rem 2rem; gap: 1rem;
+      max-width: 500px; width: 100%;
+    }
+
+    /* --- Header --- */
+    .header { text-align: center; width: 100%; }
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 2.5rem);
+      font-weight: 900; letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #10B981, #3B82F6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header p { color: #6b6b80; font-size: 0.9rem; margin-top: 0.15rem; }
+
+    /* --- Stats Bar --- */
+    .stats-bar {
+      display: flex; gap: 0.5rem; justify-content: center; width: 100%;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.5rem 1rem; border-radius: 12px; text-align: center; flex: 1;
+    }
+    .stat-card__label { font-size: 0.65rem; color: #6b6b80; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .stat-card__val { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800; color: #f0f0f5; }
+    .stat-card__val--score { color: #10B981; }
+
+    /* --- Game Canvas Wrapper --- */
+    .game-wrapper {
+      position: relative; width: 100%; aspect-ratio: 4/5; max-height: 500px;
+      background: #020205; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    }
+
+    canvas {
+      display: block; width: 100%; height: 100%;
+    }
+
+    /* --- Overlays --- */
+    .overlay {
+      position: absolute; inset: 0;
+      background: rgba(10,10,15,0.85); backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1.5rem; opacity: 1; visibility: visible; transition: all 300ms ease; z-index: 10;
+      text-align: center; padding: 1rem;
+    }
+    .overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .overlay__emoji { font-size: 3.5rem; }
+    .overlay__title { font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 900; color: #10B981; text-shadow: 0 0 20px rgba(16,185,129,0.3); }
+    .overlay__text { color: #a0a0b8; font-size: 0.95rem; max-width: 320px; line-height: 1.6; }
+
+    /* Buttons */
+    .btn {
+      padding: 0.75rem 2rem; border-radius: 12px; border: none;
+      font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: all 150ms ease;
+    }
+    .btn--primary {
+      background: linear-gradient(135deg, #10B981, #3B82F6); color: #fff;
+      box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+    }
+    .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.45); }
+
+    /* --- Mobile Control Pad --- */
+    .control-pad {
+      display: none; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; max-width: 320px; margin-top: 0.5rem;
+    }
+    .pad-btn {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 0.75rem; color: #a0a0b8; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      user-select: none; transition: all 100ms ease;
+    }
+    .pad-btn:active { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.3); color: #f0f0f5; }
+    .pad-btn--fire { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); color: #60a5fa; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 0.8rem; }
+    .pad-btn--fire:active { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); }
+
+    .help-hint {
+      text-align: center; color: #6b6b80; font-size: 0.8rem; line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .control-pad { display: grid; }
+      .container { padding: 4.5rem 0.5rem 1rem; }
+      .overlay__title { font-size: 1.8rem; }
+      .overlay__text { font-size: 0.85rem; }
+    }
+  </style>
 </head>
 <body>
-    <div class="game-container">
-        <h1>Space Invaders</h1>
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div class="glow glow--1"></div>
+  <div class="glow glow--2"></div>
+
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="container">
+    <header class="header">
+      <h1>Space Invaders</h1>
+      <p>Defend Earth from the alien invaders</p>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-card__label">Score</div>
+        <div class="stat-card__val stat-card__val--score" id="current-score">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Best</div>
+        <div class="stat-card__val" id="best-score">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__label">Lives</div>
+        <div class="stat-card__val" style="color:#EF4444" id="lives-val">❤️❤️❤️</div>
+      </div>
     </div>
-    <script src="../script.js"></script>
+
+    <!-- Play Wrapper -->
+    <div class="game-wrapper">
+      <canvas id="game-canvas"></canvas>
+
+      <!-- Welcome Overlay -->
+      <div class="overlay" id="menu-overlay">
+        <div class="overlay__emoji">👾</div>
+        <div class="overlay__title">Space Invaders</div>
+        <div class="overlay__text">
+          Use <strong>A / D</strong> or <strong>Arrow Keys</strong> to move.<br>
+          Press <strong>Space Bar</strong> to shoot. Defend Earth!
+        </div>
+        <button class="btn btn--primary" id="start-btn">Start Mission</button>
+      </div>
+
+      <!-- Game Over Overlay -->
+      <div class="overlay hidden" id="game-over-overlay">
+        <div class="overlay__emoji" id="game-over-emoji">💥</div>
+        <div class="overlay__title" id="game-over-title">Mission Failed</div>
+        <div class="overlay__text" id="game-over-stats">Score: 0</div>
+        <button class="btn btn--primary" id="retry-btn">Try Again</button>
+      </div>
+    </div>
+
+    <!-- On screen buttons for mobile -->
+    <div class="control-pad">
+      <div class="pad-btn" id="btn-left">←</div>
+      <div class="pad-btn pad-btn--fire" id="btn-fire">FIRE</div>
+      <div class="pad-btn" id="btn-right">→</div>
+    </div>
+
+    <div class="help-hint">
+      <strong>Controls:</strong> Left/Right arrows or A/D to move, Space to fire.
+    </div>
+  </div>
+
+  <script>
+    // ─── Web Audio Synthesizer ──────────────────────────────────────────────────
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'laser') {
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.12);
+      } else if (type === 'hit') {
+        // Explosion noise simulation
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      } else if (type === 'player_hit') {
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.45);
+      } else if (type === 'victory') {
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const oscN = audioCtx.createOscillator();
+          const gainN = audioCtx.createGain();
+          oscN.connect(gainN);
+          gainN.connect(audioCtx.destination);
+          oscN.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.08);
+          gainN.gain.setValueAtTime(0.08, audioCtx.currentTime + idx * 0.08);
+          gainN.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.08 + 0.3);
+          oscN.start(audioCtx.currentTime + idx * 0.08);
+          oscN.stop(audioCtx.currentTime + idx * 0.08 + 0.3);
+        });
+      }
+    }
+
+    // ─── Game Physics Engine ──────────────────────────────────────────────────
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const WIDTH = 400;
+    const HEIGHT = 500;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+
+    // Game states
+    let playerX = WIDTH / 2 - 15;
+    const playerY = HEIGHT - 40;
+    const playerW = 30;
+    const playerH = 15;
+    const playerSpeed = 4.5;
+    let lives = 3;
+
+    let lasers = [];
+    const laserW = 3;
+    const laserH = 12;
+    const laserSpeed = 6;
+
+    let invaders = [];
+    const invaderRows = 4;
+    const invaderCols = 7;
+    const invaderW = 22;
+    const invaderH = 16;
+    let invaderDir = 1; // 1 = right, -1 = left
+    let invaderSpeed = 0.8;
+    let invaderDropY = 0;
+
+    let score = 0;
+    let best = parseInt(localStorage.getItem('best_invaders') || 0);
+    let playing = false;
+    let wave = 1;
+
+    // DOM selectors
+    const menuOverlay = document.getElementById('menu-overlay');
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+    const gameOverEmoji = document.getElementById('game-over-emoji');
+    const gameOverTitle = document.getElementById('game-over-title');
+    const gameOverStats = document.getElementById('game-over-stats');
+    const scoreVal = document.getElementById('current-score');
+    const bestVal = document.getElementById('best-score');
+    const livesVal = document.getElementById('lives-val');
+
+    // Controls
+    const keys = {};
+
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      wave = 1;
+      invaderSpeed = 0.8;
+      lasers = [];
+      playerX = WIDTH / 2 - playerW / 2;
+      spawnInvaders();
+      updateUI();
+    }
+
+    function spawnInvaders() {
+      invaders = [];
+      const startX = 40;
+      const startY = 50;
+      const gapX = 42;
+      const gapY = 32;
+
+      for (let r = 0; r < invaderRows; r++) {
+        for (let c = 0; c < invaderCols; c++) {
+          invaders.push({
+            x: startX + c * gapX,
+            y: startY + r * gapY,
+            w: invaderW,
+            h: invaderH,
+            alive: true,
+            type: r % 2 === 0 ? 'top' : 'bot'
+          });
+        }
+      }
+    }
+
+    function updateUI() {
+      scoreVal.textContent = score;
+      bestVal.textContent = best;
+      livesVal.textContent = '❤️'.repeat(Math.max(0, lives));
+    }
+
+    function shoot() {
+      if (!playing || lasers.length >= 3) return; // limit to 3 lasers on screen
+      lasers.push({
+        x: playerX + playerW / 2 - laserW / 2,
+        y: playerY
+      });
+      playSound('laser');
+    }
+
+    // ─── Update Loop ──────────────────────────────────────────────────────────
+    function updatePhysics() {
+      if (!playing) return;
+
+      // 1. Move Player
+      if (keys['ArrowLeft'] || keys['KeyA']) {
+        playerX = Math.max(0, playerX - playerSpeed);
+      }
+      if (keys['ArrowRight'] || keys['KeyD']) {
+        playerX = Math.min(WIDTH - playerW, playerX + playerSpeed);
+      }
+
+      // 2. Move Lasers
+      lasers.forEach(l => {
+        l.y -= laserSpeed;
+      });
+      lasers = lasers.filter(l => l.y + laserH > 0);
+
+      // 3. Move Invaders
+      let hitEdge = false;
+      invaders.forEach(inv => {
+        if (inv.alive) {
+          inv.x += invaderSpeed * invaderDir;
+          if (inv.x <= 10 || inv.x + inv.w >= WIDTH - 10) {
+            hitEdge = true;
+          }
+        }
+      });
+
+      if (hitEdge) {
+        invaderDir *= -1;
+        invaders.forEach(inv => {
+          if (inv.alive) {
+            inv.y += 12; // Shift down
+            if (inv.y + inv.h >= playerY) {
+              endGame(false);
+            }
+          }
+        });
+      }
+
+      // 4. Laser-Invader Collision
+      lasers.forEach((l, lIdx) => {
+        invaders.forEach(inv => {
+          if (inv.alive) {
+            const hit = l.x + laserW > inv.x &&
+                        l.x < inv.x + inv.w &&
+                        l.y + laserH > inv.y &&
+                        l.y < inv.y + inv.h;
+            if (hit) {
+              inv.alive = false;
+              lasers.splice(lIdx, 1);
+              score += 15;
+              playSound('hit');
+              updateUI();
+            }
+          }
+        });
+      });
+
+      // Cleanup dead invaders
+      const aliveCount = invaders.filter(inv => inv.alive).length;
+      if (aliveCount === 0) {
+        wave++;
+        invaderSpeed += 0.25;
+        playSound('victory');
+        spawnInvaders();
+      }
+
+      // Check Highscore
+      if (score > best) {
+        best = score;
+        localStorage.setItem('best_invaders', best);
+      }
+    }
+
+    function endGame(victory = false) {
+      playing = false;
+      playSound('player_hit');
+      
+      gameOverOverlay.classList.remove('hidden');
+      gameOverStats.textContent = `Score: ${score}`;
+
+      if (victory) {
+        gameOverTitle.textContent = "Earth Saved!";
+        gameOverEmoji.textContent = "🏆";
+      } else {
+        gameOverTitle.textContent = "Mission Failed";
+        gameOverEmoji.textContent = "💥";
+      }
+      updateUI();
+    }
+
+    // ─── Drawing Utilities ────────────────────────────────────────────────────
+    function drawScene() {
+      // Clear screen
+      ctx.fillStyle = '#020205';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      // Draw Player Ship (Lime Green Space Ship)
+      ctx.fillStyle = '#10B981';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#10B981';
+      ctx.beginPath();
+      ctx.moveTo(playerX + playerW / 2, playerY);
+      ctx.lineTo(playerX + playerW, playerY + playerH);
+      ctx.lineTo(playerX, playerY + playerH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Gun nozzle
+      ctx.fillRect(playerX + playerW / 2 - 2, playerY - 3, 4, 3);
+      ctx.shadowBlur = 0; // reset
+
+      // Draw Lasers (Cyan beams)
+      ctx.fillStyle = '#60A5FA';
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#3B82F6';
+      lasers.forEach(l => {
+        ctx.fillRect(l.x, l.y, laserW, laserH);
+      });
+      ctx.shadowBlur = 0; // reset
+
+      // Draw Invaders
+      invaders.forEach(inv => {
+        if (inv.alive) {
+          ctx.fillStyle = inv.type === 'top' ? '#EF4444' : '#EC4899';
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = ctx.fillStyle;
+
+          // Simple retro invader drawing using simple block pixel matrix
+          ctx.fillRect(inv.x, inv.y + 4, inv.w, inv.h - 8);
+          // Antennas / legs
+          ctx.fillRect(inv.x + 4, inv.y, 4, 4);
+          ctx.fillRect(inv.x + inv.w - 8, inv.y, 4, 4);
+          ctx.fillRect(inv.x + 2, inv.y + inv.h - 4, 4, 4);
+          ctx.fillRect(inv.x + inv.w - 6, inv.y + inv.h - 4, 4, 4);
+
+          // Eyes (transparent cutouts)
+          ctx.fillStyle = '#020205';
+          ctx.shadowBlur = 0;
+          ctx.fillRect(inv.x + 4, inv.y + 6, 3, 3);
+          ctx.fillRect(inv.x + inv.w - 7, inv.y + 6, 3, 3);
+        }
+      });
+    }
+
+    function gameTick(now) {
+      updatePhysics();
+      drawScene();
+      requestAnimationFrame(gameTick);
+    }
+
+    // ─── Input Bindings ───────────────────────────────────────────────────────
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        shoot();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    // Mobile buttons
+    document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowLeft'] = true; }, { passive: false });
+    document.getElementById('btn-left').addEventListener('touchend', (e) => { e.preventDefault(); keys['ArrowLeft'] = false; }, { passive: true });
+    document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowRight'] = true; }, { passive: false });
+    document.getElementById('btn-right').addEventListener('touchend', (e) => { e.preventDefault(); keys['ArrowRight'] = false; }, { passive: true });
+    document.getElementById('btn-fire').addEventListener('touchstart', (e) => { e.preventDefault(); shoot(); }, { passive: true });
+
+    // Overlay Buttons
+    document.getElementById('start-btn').addEventListener('click', () => {
+      menuOverlay.classList.add('hidden');
+      resetGame();
+      playing = true;
+    });
+
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      gameOverOverlay.classList.add('hidden');
+      resetGame();
+      playing = true;
+    });
+
+    // Boot
+    resetGame();
+    requestAnimationFrame(gameTick);
+  </script>
 </body>
 </html>

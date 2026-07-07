@@ -209,6 +209,11 @@ This is a **static site** served from a web server at `games.eliyas.xyz`.
 | 🎲 Roll a Dice | `roll-a-dice/` | 🟢 Playable | Luck | Easy |
 | 🪙 Flip a Coin | `flip-a-coin/` | 🟢 Playable | Luck | Easy |
 | 🃏 Draw a Card | `draw-a-card/` | 🟢 Playable | Luck | Easy |
+| 👾 Space Invaders | `space-invaders/` | 🟢 Playable | Arcade | Medium |
+| 🐦 Flappy Clone | `flappy-clone/` | 🟢 Playable | Arcade | Medium |
+| ❌ Tic Tac Toe | `tic-tac-toe/` | 🟢 Playable | Puzzle | Easy |
+| 🧩 Wordle | `wordle-clone/` | 🟢 Playable | Puzzle | Medium |
+| 🎪 Hangman | `hangman/` | 🟢 Playable | Puzzle | Medium |
 
 ---
 
