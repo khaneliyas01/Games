@@ -304,7 +304,7 @@ function createGameCard(game, index) {
   const difficultyClass = `game-card__tag--difficulty-${game.difficulty}`;
 
   const card = document.createElement('a');
-  card.href = isPlayable ? game.path : '#';
+  card.href = isPlayable ? `/embed/?game=${encodeURIComponent(game.id)}` : '#';
   card.className = 'game-card';
   card.dataset.category = game.category;
   card.dataset.title = game.title.toLowerCase();
