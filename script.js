@@ -269,6 +269,18 @@ const GAMES = [
     status: 'playable',
     accentColor: '#ec4899',
     bgGradient: 'linear-gradient(135deg, #20122a, #5b21b6)'
+  },
+  {
+    id: 'simon-says',
+    title: 'Simon Says',
+    emoji: '🧠',
+    description: 'Repeat the growing sequence of colors and sounds. How long can you remember?',
+    category: 'memory',
+    difficulty: 'easy',
+    path: 'simon-says/',
+    status: 'playable',
+    accentColor: '#F59E0B',
+    bgGradient: 'linear-gradient(135deg, #78350F, #F59E0B)'
   }
 ];
 
