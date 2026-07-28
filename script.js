@@ -281,6 +281,114 @@ const GAMES = [
     status: 'playable',
     accentColor: '#F59E0B',
     bgGradient: 'linear-gradient(135deg, #78350F, #F59E0B)'
+  },
+  {
+    id: 'connect-four',
+    title: 'Connect Four',
+    emoji: '🟡',
+    description: 'Drop discs into the grid and connect four in a row, column, or diagonal to win.',
+    category: 'strategy',
+    difficulty: 'medium',
+    path: 'connect-four/',
+    status: 'playable',
+    accentColor: '#FBBF24',
+    bgGradient: 'linear-gradient(135deg, #78350F, #FBBF24)'
+  },
+  {
+    id: 'life',
+    title: 'Game of Life',
+    emoji: '🧬',
+    description: 'Watch cells live, die, and multiply under simple rules in Conway\'s famous cellular automaton.',
+    category: 'simulation',
+    difficulty: 'easy',
+    path: 'life/',
+    status: 'playable',
+    accentColor: '#34D399',
+    bgGradient: 'linear-gradient(135deg, #064E3B, #34D399)'
+  },
+  {
+    id: 'sudoku',
+    title: 'Sudoku',
+    emoji: '🔢',
+    description: 'Fill the 9×9 grid so every row, column, and 3×3 box contains digits 1–9.',
+    category: 'puzzle',
+    difficulty: 'hard',
+    path: 'sudoku/',
+    status: 'playable',
+    accentColor: '#818CF8',
+    bgGradient: 'linear-gradient(135deg, #312E81, #818CF8)'
+  },
+  {
+    id: 'tower-defense',
+    title: 'Tower Defense',
+    emoji: '🏰',
+    description: 'Place towers strategically and stop waves of enemies from reaching the exit.',
+    category: 'strategy',
+    difficulty: 'hard',
+    path: 'tower-defense/',
+    status: 'playable',
+    accentColor: '#F97316',
+    bgGradient: 'linear-gradient(135deg, #7C2D12, #F97316)'
+  },
+  {
+    id: 'reaction-time',
+    title: 'Reaction Time',
+    emoji: '🎯',
+    description: 'Test your reflexes — click as fast as you can when the screen changes color.',
+    category: 'skill',
+    difficulty: 'easy',
+    path: 'reaction-time/',
+    status: 'playable',
+    accentColor: '#EF4444',
+    bgGradient: 'linear-gradient(135deg, #7F1D1D, #EF4444)'
+  },
+  {
+    id: 'word-scramble',
+    title: 'Word Scramble',
+    emoji: '🔤',
+    description: 'Unscramble the shuffled letters to find the hidden word before time runs out.',
+    category: 'puzzle',
+    difficulty: 'easy',
+    path: 'word-scramble/',
+    status: 'playable',
+    accentColor: '#A78BFA',
+    bgGradient: 'linear-gradient(135deg, #4C1D95, #A78BFA)'
+  },
+  {
+    id: 'endless-runner',
+    title: 'Endless Runner',
+    emoji: '🏃',
+    description: 'Jump and dodge obstacles in this auto-scrolling side-scroller. How far can you go?',
+    category: 'arcade',
+    difficulty: 'medium',
+    path: 'endless-runner/',
+    status: 'playable',
+    accentColor: '#14B8A6',
+    bgGradient: 'linear-gradient(135deg, #134E4A, #14B8A6)'
+  },
+  {
+    id: 'rhythm-tap',
+    title: 'Rhythm Tap',
+    emoji: '🎵',
+    description: 'Tap falling notes in sync with the beat. Hit perfect timing for the highest score!',
+    category: 'skill',
+    difficulty: 'medium',
+    path: 'rhythm-tap/',
+    status: 'playable',
+    accentColor: '#F472B6',
+    bgGradient: 'linear-gradient(135deg, #831843, #F472B6)'
+  },
+  {
+    id: 'math-sprint',
+    title: 'Math Sprint',
+    emoji: '🧮',
+    description: 'Solve arithmetic problems as fast as you can against the clock. Brain training at speed!',
+    category: 'quiz',
+    difficulty: 'easy',
+    path: 'math-sprint/',
+    status: 'playable',
+    accentColor: '#22D3EE',
+    bgGradient: 'linear-gradient(135deg, #164E63, #22D3EE)'
   }
 ];
 
@@ -304,7 +412,7 @@ function createGameCard(game, index) {
   const difficultyClass = `game-card__tag--difficulty-${game.difficulty}`;
 
   const card = document.createElement('a');
-  card.href = isPlayable ? `/embed/?game=${encodeURIComponent(game.id)}` : '#';
+  card.href = isPlayable ? game.path : '#';
   card.className = 'game-card';
   card.dataset.category = game.category;
   card.dataset.title = game.title.toLowerCase();

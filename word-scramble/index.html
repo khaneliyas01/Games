@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Word Scramble — Unscramble shuffled letters to find the hidden word before time runs out.">
+  <title>Word Scramble — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔤</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      color: #f0f0f5;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #a0a0b8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      z-index: 100;
+      transition: color 0.2s;
+      background: rgba(10, 10, 15, 0.7);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+    }
+    .back-link:hover { color: #f0f0f5; }
+
+    .game-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 600px;
+      padding: 2rem 1.5rem;
+      gap: 1.5rem;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 1rem;
+    }
+
+    .score-box, .timer-box, .streak-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 0.6rem 1rem;
+      text-align: center;
+      flex: 1;
+    }
+
+    .score-box .label, .timer-box .label, .streak-box .label {
+      font-size: 0.7rem;
+      color: #6b6b80;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .score-box .value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #A78BFA;
+    }
+
+    .timer-box .value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #F59E0B;
+    }
+    .timer-box .value.danger { color: #EF4444; }
+
+    .streak-box .value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #10B981;
+    }
+
+    .scrambled-word {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .letter-tile {
+      width: 52px;
+      height: 60px;
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(167, 139, 250, 0.05));
+      border: 2px solid rgba(167, 139, 250, 0.3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f0f0f5;
+      text-transform: uppercase;
+      animation: tileIn 0.3s ease backwards;
+      transition: transform 0.15s, border-color 0.2s;
+    }
+
+    .letter-tile:hover {
+      transform: translateY(-3px);
+      border-color: rgba(167, 139, 250, 0.6);
+    }
+
+    @keyframes tileIn {
+      from { opacity: 0; transform: scale(0.5) rotateY(90deg); }
+      to { opacity: 1; transform: scale(1) rotateY(0); }
+    }
+
+    .hint-text {
+      color: #6b6b80;
+      font-size: 0.9rem;
+      font-style: italic;
+      min-height: 1.5rem;
+      text-align: center;
+    }
+
+    .input-area {
+      width: 100%;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .guess-input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 0.9rem 1.2rem;
+      color: #f0f0f5;
+      font-size: 1.1rem;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .guess-input:focus { border-color: #A78BFA; }
+    .guess-input.correct { border-color: #10B981; background: rgba(16, 185, 129, 0.1); }
+    .guess-input.wrong { border-color: #EF4444; background: rgba(239, 68, 68, 0.1); }
+
+    .submit-btn {
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border: none;
+      border-radius: 12px;
+      padding: 0.9rem 1.5rem;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4); }
+    .submit-btn:active { transform: translateY(0); }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .action-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 0.6rem 1.2rem;
+      color: #a0a0b8;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-btn:hover { background: rgba(255,255,255,0.08); color: #f0f0f5; }
+
+    .message {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      min-height: 1.5rem;
+      text-align: center;
+    }
+    .message.correct { color: #10B981; }
+    .message.wrong { color: #EF4444; }
+
+    .game-over {
+      text-align: center;
+    }
+    .game-over h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+    }
+    .game-over .final-score {
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #A78BFA, #EC4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .play-again-btn {
+      margin-top: 1.5rem;
+      background: linear-gradient(135deg, #7C3AED, #A78BFA);
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 2rem;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .play-again-btn:hover { transform: translateY(-2px); }
+
+    @media (max-width: 480px) {
+      .letter-tile { width: 42px; height: 50px; font-size: 1.3rem; }
+      .scrambled-word { gap: 0.35rem; }
+      .header-row { gap: 0.5rem; }
+      .score-box .value, .timer-box .value, .streak-box .value { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="game-container" id="game">
+    <!-- Dynamically rendered -->
+  </div>
+
+  <script>
+    const WORDS = [
+      'apple','beach','candy','dance','eagle','flame','grape','heart','ivory','jolly',
+      'karma','lemon','magic','noble','ocean','piano','queen','river','solar','tiger',
+      'urban','vivid','water','xenon','yacht','zebra','angel','brave','cloud','delta',
+      'ember','frost','globe','honor','image','jewel','knack','lunar','mango','north',
+      'oasis','pearl','quest','reign','storm','tower','unity','valor','wrath','youth',
+      'acorn','blaze','coral','dream','event','flora','grain','haste','inbox','jumbo',
+      'kiosk','lilac','model','nerve','orbit','plaza','quota','radar','sugar','trace',
+      'ultra','vault','wheat','pixel','bonus','crypt'
+    ];
+
+    const container = document.getElementById('game');
+    let score = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let timeLeft = 30;
+    let timerId = null;
+    let currentWord = '';
+    let scrambled = '';
+    let hintRevealed = 0;
+    let round = 0;
+    let usedWords = [];
+
+    function shuffle(str) {
+      const arr = str.split('');
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      const result = arr.join('');
+      // Ensure it's actually scrambled
+      return result === str ? shuffle(str) : result;
+    }
+
+    function pickWord() {
+      const available = WORDS.filter(w => !usedWords.includes(w));
+      if (available.length === 0) usedWords = [];
+      const pool = available.length > 0 ? available : WORDS;
+      const word = pool[Math.floor(Math.random() * pool.length)];
+      usedWords.push(word);
+      return word;
+    }
+
+    function startTimer() {
+      timeLeft = 30;
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        timeLeft--;
+        renderTimer();
+        if (timeLeft <= 0) {
+          clearInterval(timerId);
+          gameOver();
+        }
+      }, 1000);
+    }
+
+    function renderTimer() {
+      const el = document.getElementById('timer-value');
+      if (!el) return;
+      el.textContent = timeLeft + 's';
+      el.className = 'value' + (timeLeft <= 5 ? ' danger' : '');
+    }
+
+    function getHint() {
+      if (hintRevealed >= currentWord.length - 1) return;
+      hintRevealed++;
+      const hint = currentWord.slice(0, hintRevealed) + '_ '.repeat(currentWord.length - hintRevealed).trim();
+      document.getElementById('hint-text').textContent = `Hint: ${hint}`;
+      // Penalty for hint
+      score = Math.max(0, score - 5);
+      renderScore();
+    }
+
+    function skipWord() {
+      streak = 0;
+      timeLeft = Math.max(5, timeLeft - 5);
+      nextRound();
+    }
+
+    function renderScore() {
+      const el = document.getElementById('score-value');
+      if (el) el.textContent = score;
+    }
+
+    function nextRound() {
+      round++;
+      currentWord = pickWord();
+      scrambled = shuffle(currentWord);
+      hintRevealed = 0;
+      render();
+    }
+
+    function checkGuess() {
+      const input = document.getElementById('guess-input');
+      const msg = document.getElementById('message');
+      const guess = input.value.trim().toLowerCase();
+
+      if (guess === currentWord) {
+        // Correct
+        const bonus = Math.max(1, Math.ceil(timeLeft / 3));
+        score += 10 + bonus;
+        streak++;
+        if (streak > bestStreak) bestStreak = streak;
+        timeLeft = Math.min(60, timeLeft + 5);
+        msg.textContent = `✓ Correct! +${10 + bonus} points`;
+        msg.className = 'message correct';
+        input.className = 'guess-input correct';
+        renderScore();
+        setTimeout(() => nextRound(), 600);
+      } else {
+        msg.textContent = '✗ Not quite — try again!';
+        msg.className = 'message wrong';
+        input.className = 'guess-input wrong';
+        input.value = '';
+        setTimeout(() => {
+          input.className = 'guess-input';
+          msg.textContent = '';
+        }, 800);
+      }
+    }
+
+    function gameOver() {
+      container.innerHTML = `
+        <div class="game-over">
+          <h2>⏰ Time's Up!</h2>
+          <div class="final-score">${score}</div>
+          <p style="color:#a0a0b8; margin-top:0.5rem;">Score</p>
+          <p style="color:#6b6b80; margin-top:1rem;">Words solved: ${round - 1} &nbsp;|&nbsp; Best streak: ${bestStreak} 🔥</p>
+          <button class="play-again-btn" onclick="resetGame()">Play Again</button>
+        </div>
+      `;
+    }
+
+    function resetGame() {
+      score = 0;
+      streak = 0;
+      bestStreak = 0;
+      round = 0;
+      usedWords = [];
+      nextRound();
+      startTimer();
+    }
+
+    function render() {
+      const tiles = scrambled.split('').map((ch, i) =>
+        `<div class="letter-tile" style="animation-delay:${i * 0.06}s">${ch}</div>`
+      ).join('');
+
+      container.innerHTML = `
+        <div class="header-row">
+          <div class="score-box">
+            <div class="label">Score</div>
+            <div class="value" id="score-value">${score}</div>
+          </div>
+          <div class="timer-box">
+            <div class="label">Time</div>
+            <div class="value" id="timer-value">${timeLeft}s</div>
+          </div>
+          <div class="streak-box">
+            <div class="label">Streak</div>
+            <div class="value">${streak} 🔥</div>
+          </div>
+        </div>
+
+        <div class="scrambled-word">${tiles}</div>
+
+        <div class="hint-text" id="hint-text"></div>
+
+        <div class="input-area">
+          <input type="text" class="guess-input" id="guess-input" placeholder="Type the word..." autocomplete="off" maxlength="20">
+          <button class="submit-btn" id="submit-btn">Go</button>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="actions">
+          <button class="action-btn" id="hint-btn">💡 Hint (-5 pts)</button>
+          <button class="action-btn" id="skip-btn">⏭ Skip (-5s)</button>
+          <button class="action-btn" id="shuffle-btn">🔀 Reshuffle</button>
+        </div>
+      `;
+
+      // Re-bind events
+      document.getElementById('submit-btn').addEventListener('click', checkGuess);
+      document.getElementById('guess-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') checkGuess();
+      });
+      document.getElementById('hint-btn').addEventListener('click', getHint);
+      document.getElementById('skip-btn').addEventListener('click', skipWord);
+      document.getElementById('shuffle-btn').addEventListener('click', () => {
+        scrambled = shuffle(currentWord);
+        render();
+      });
+
+      document.getElementById('guess-input').focus();
+    }
+
+    // Start
+    nextRound();
+    startTimer();
+  </script>
+</body>
+</html>

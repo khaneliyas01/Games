@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Reaction Time — Test your reflexes by clicking as fast as you can when the screen changes color.">
+  <title>Reaction Time — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      color: #f0f0f5;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #a0a0b8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      z-index: 100;
+      transition: color 0.2s;
+      background: rgba(10, 10, 15, 0.7);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+    }
+    .back-link:hover { color: #f0f0f5; }
+
+    .game-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.15s;
+      position: relative;
+    }
+
+    .game-area.waiting { background: #0a0a0f; }
+    .game-area.ready { background: #7F1D1D; cursor: wait; }
+    .game-area.go { background: #065F46; cursor: pointer; }
+    .game-area.result { background: #0a0a0f; cursor: pointer; }
+    .game-area.too-soon { background: #78350F; cursor: pointer; }
+
+    .prompt-box {
+      text-align: center;
+      max-width: 500px;
+      padding: 2rem;
+    }
+
+    .prompt-box h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      line-height: 1.1;
+    }
+
+    .prompt-box .emoji-big {
+      font-size: clamp(3rem, 10vw, 5rem);
+      display: block;
+      margin-bottom: 1rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .prompt-box p {
+      color: #a0a0b8;
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+
+    .result-time {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #EF4444, #F59E0B);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .result-label {
+      font-size: 1.2rem;
+      color: #a0a0b8;
+      margin-top: 0.5rem;
+    }
+
+    .stats-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      padding: 1rem 1.5rem;
+      z-index: 100;
+    }
+
+    .stat {
+      text-align: center;
+    }
+    .stat-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #EF4444;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: #6b6b80;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
+    }
+
+    .try-count {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(10, 10, 15, 0.7);
+      backdrop-filter: blur(8px);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #a0a0b8;
+      z-index: 100;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .stats-bar { gap: 1rem; padding: 0.75rem 1rem; }
+      .stat-value { font-size: 1.1rem; }
+      .back-link { font-size: 0.8rem; padding: 0.4rem 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="try-count" id="try-count">Attempt 0 / 5</div>
+
+  <div class="game-area waiting" id="game-area">
+    <div class="prompt-box" id="prompt">
+      <span class="emoji-big">🎯</span>
+      <h1>Reaction Time</h1>
+      <p>Click anywhere to start.<br>When the screen turns <strong style="color:#10B981">green</strong>, click as fast as you can!</p>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value" id="stat-best">—</div>
+      <div class="stat-label">Best</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-avg">—</div>
+      <div class="stat-label">Average</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-last">—</div>
+      <div class="stat-label">Last</div>
+    </div>
+  </div>
+
+  <script>
+    const area = document.getElementById('game-area');
+    const prompt = document.getElementById('prompt');
+    const tryCount = document.getElementById('try-count');
+    const statBest = document.getElementById('stat-best');
+    const statAvg = document.getElementById('stat-avg');
+    const statLast = document.getElementById('stat-last');
+
+    let state = 'idle'; // idle, waiting, go, result, too-soon
+    let timeoutId = null;
+    let startTime = 0;
+    let attempts = [];
+    const MAX_ATTEMPTS = 5;
+
+    function setState(newState) {
+      state = newState;
+      area.className = 'game-area ' + newState;
+    }
+
+    function updateStats() {
+      if (attempts.length === 0) return;
+      const best = Math.min(...attempts);
+      const avg = Math.round(attempts.reduce((a, b) => a + b, 0) / attempts.length);
+      const last = attempts[attempts.length - 1];
+      statBest.textContent = best + 'ms';
+      statAvg.textContent = avg + 'ms';
+      statLast.textContent = last + 'ms';
+      tryCount.textContent = `Attempt ${attempts.length} / ${MAX_ATTEMPTS}`;
+    }
+
+    function showResult(ms) {
+      attempts.push(ms);
+      updateStats();
+      setState('result');
+      let message = '';
+      if (ms < 200) message = 'Incredible! Lightning reflexes! ⚡';
+      else if (ms < 250) message = 'Excellent! Very fast! 🔥';
+      else if (ms < 350) message = 'Great reaction time! 👍';
+      else if (ms < 500) message = 'Average — keep practicing! 💪';
+      else message = 'A bit slow — try again! 🐢';
+
+      const done = attempts.length >= MAX_ATTEMPTS;
+      const avg = Math.round(attempts.reduce((a, b) => a + b, 0) / attempts.length);
+
+      prompt.innerHTML = `
+        <div class="result-time">${ms}ms</div>
+        <div class="result-label">${message}</div>
+        <p style="margin-top:1.5rem; color: #6b6b80;">${done ? `Session complete! Average: <strong style="color:#EF4444">${avg}ms</strong><br>Click to restart.` : 'Click to try again.'}</p>
+      `;
+
+      if (done) {
+        // Reset for next session
+        setTimeout(() => { attempts = []; }, 0);
+      }
+    }
+
+    area.addEventListener('click', () => {
+      switch (state) {
+        case 'idle':
+        case 'result':
+          // Start waiting phase
+          setState('ready');
+          prompt.innerHTML = `
+            <span class="emoji-big" style="animation:none">🔴</span>
+            <h1>Wait for green...</h1>
+            <p style="color:#a0a0b8">Don't click yet!</p>
+          `;
+          const delay = Math.random() * 3000 + 1500; // 1.5–4.5 seconds
+          timeoutId = setTimeout(() => {
+            setState('go');
+            startTime = performance.now();
+            prompt.innerHTML = `
+              <span class="emoji-big" style="animation:none">🟢</span>
+              <h1>Click NOW!</h1>
+            `;
+          }, delay);
+          break;
+
+        case 'ready':
+          // Clicked too soon
+          clearTimeout(timeoutId);
+          setState('too-soon');
+          prompt.innerHTML = `
+            <span class="emoji-big" style="animation:none">⚠️</span>
+            <h1>Too soon!</h1>
+            <p style="color:#a0a0b8">You clicked before it turned green.<br>Click to try again.</p>
+          `;
+          break;
+
+        case 'too-soon':
+          setState('idle');
+          area.click(); // restart
+          break;
+
+        case 'go':
+          const elapsed = Math.round(performance.now() - startTime);
+          showResult(elapsed);
+          break;
+      }
+    });
+  </script>
+</body>
+</html>
