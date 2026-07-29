@@ -83,6 +83,20 @@
     }
     .btn:hover { background: rgba(126, 201, 255, 0.35); }
     .hud { display: flex; justify-content: space-between; padding: 1rem; }
+    /* Mobile Controls */
+    .mobile-controls {
+      display: none; position: fixed; bottom: 1.5rem; left: 1rem; right: 1rem;
+      justify-content: space-between; z-index: 25; touch-action: none; pointer-events: none;
+    }
+    .mobile-group { display: flex; gap: 0.5rem; pointer-events: auto; }
+    .m-btn {
+      width: 50px; height: 50px; border-radius: 50%;
+      background: rgba(126, 201, 255, 0.15); border: 1px solid rgba(126, 201, 255, 0.3);
+      color: rgba(234, 242, 255, 0.8); display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; cursor: pointer; user-select: none;
+    }
+    .m-btn:active { background: rgba(126, 201, 255, 0.35); }
+    @media (max-width: 600px) { .mobile-controls { display: flex; } }
   </style>
 </head>
 <body>
@@ -104,6 +118,19 @@
     <button class="btn" id="startBtn">START</button>
     <div class="ghost" id="status"></div>
   </div>
+  
+  <!-- Mobile Controls -->
+  <div class="mobile-controls" id="mobileControls">
+    <div class="mobile-group">
+      <div class="m-btn" id="m-left">↺</div>
+      <div class="m-btn" id="m-right">↻</div>
+    </div>
+    <div class="mobile-group">
+      <div class="m-btn" id="m-fire">🎯</div>
+      <div class="m-btn" id="m-thrust">🚀</div>
+    </div>
+  </div>
+
   <script>
     (function () {
       const canvas = document.getElementById('gameCanvas');
@@ -126,9 +153,25 @@
       const keys = {};
       window.addEventListener('keydown', e => {
         keys[e.key.toLowerCase()] = true;
+        if (e.key === ' ') keys[' '] = true;
         if (e.key.toLowerCase() === 'p') togglePause();
       });
-      window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+      window.addEventListener('keyup', e => {
+        keys[e.key.toLowerCase()] = false;
+        if (e.key === ' ') keys[' '] = false;
+      });
+
+      // Mobile touch bindings
+      const bindBtn = (id, keyVal) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyVal] = true; }, { passive: false });
+        btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyVal] = false; }, { passive: false });
+      };
+      bindBtn('m-left', 'arrowleft');
+      bindBtn('m-right', 'arrowright');
+      bindBtn('m-thrust', 'arrowup');
+      bindBtn('m-fire', ' ');
 
       const SHIP_SIZE = 18;
       const TURN_SPEED = 5.5;
