@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Rhythm Tap — Tap falling notes in sync with the beat.">
+  <title>Rhythm Tap — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      color: #f0f0f5;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #a0a0b8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      z-index: 100;
+      transition: color 0.2s;
+      background: rgba(10, 10, 15, 0.7);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+    }
+    .back-link:hover { color: #f0f0f5; }
+
+    .game-container {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      height: 80vh;
+      background: rgba(20, 20, 25, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .stats-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 10;
+      background: linear-gradient(180deg, rgba(10,10,15,0.9) 0%, transparent 100%);
+    }
+
+    .score-box .label, .combo-box .label {
+      font-size: 0.7rem;
+      color: #a0a0b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .score-box .val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #F472B6;
+    }
+    
+    .combo-box { text-align: right; }
+    .combo-box .val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #38BDF8;
+    }
+
+    .combo-box .val.high-combo {
+      color: #FBBF24;
+      animation: pulse 0.5s infinite alternate;
+    }
+    
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Controls */
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      padding: 0 10px;
+      z-index: 10;
+    }
+
+    .btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: rgba(255,255,255,0.5);
+      transition: all 0.1s;
+      user-select: none;
+    }
+
+    .btn.active {
+      transform: scale(0.9);
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .btn-1 { border-color: #F472B6; }
+    .btn-1.active { background: rgba(244, 114, 182, 0.3); color: #F472B6; box-shadow: 0 0 20px rgba(244, 114, 182, 0.5); }
+    
+    .btn-2 { border-color: #38BDF8; }
+    .btn-2.active { background: rgba(56, 189, 248, 0.3); color: #38BDF8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
+    
+    .btn-3 { border-color: #34D399; }
+    .btn-3.active { background: rgba(52, 211, 153, 0.3); color: #34D399; box-shadow: 0 0 20px rgba(52, 211, 153, 0.5); }
+    
+    .btn-4 { border-color: #FBBF24; }
+    .btn-4.active { background: rgba(251, 191, 36, 0.3); color: #FBBF24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+
+    .feedback-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .feedback-text.show {
+      animation: popFade 0.6s ease forwards;
+    }
+    
+    @keyframes popFade {
+      0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .overlay.hidden { display: none; }
+
+    .overlay h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #F472B6;
+      margin-bottom: 0.5rem;
+    }
+
+    .overlay p { color: #a0a0b8; margin-bottom: 2rem; line-height: 1.5; }
+
+    .start-btn {
+      background: linear-gradient(135deg, #BE185D, #F472B6);
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 2.5rem;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .start-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(244, 114, 182, 0.4); }
+
+    @media (max-width: 480px) {
+      .game-container { height: 100vh; max-width: 100%; border-radius: 0; border: none; }
+      .btn { width: 60px; height: 60px; }
+    }
+  </style>
+</head>
+<body>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="game-container">
+    <div class="stats-bar">
+      <div class="score-box">
+        <div class="label">Score</div>
+        <div class="val" id="score">0</div>
+      </div>
+      <div class="combo-box">
+        <div class="label">Combo</div>
+        <div class="val" id="combo">0</div>
+      </div>
+    </div>
+
+    <div class="feedback-text" id="feedback">Perfect!</div>
+
+    <canvas id="game-canvas" width="400" height="800"></canvas>
+    
+    <div class="controls">
+      <div class="btn btn-1" id="btn-0" data-col="0">D</div>
+      <div class="btn btn-2" id="btn-1" data-col="1">F</div>
+      <div class="btn btn-3" id="btn-2" data-col="2">J</div>
+      <div class="btn btn-4" id="btn-3" data-col="3">K</div>
+    </div>
+
+    <div class="overlay" id="overlay">
+      <h1 id="overlay-title">Rhythm Tap</h1>
+      <p id="overlay-desc">Tap the keys (D, F, J, K) or buttons when the falling notes hit the bottom target.</p>
+      <button class="start-btn" id="start-btn">Start Game</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('start-btn');
+    const scoreEl = document.getElementById('score');
+    const comboEl = document.getElementById('combo');
+    const feedbackEl = document.getElementById('feedback');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayDesc = document.getElementById('overlay-desc');
+    
+    // Fit canvas to actual container size
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Game state
+    let isPlaying = false;
+    let score = 0;
+    let combo = 0;
+    let maxCombo = 0;
+    let speed = 4;
+    let frameId;
+    let notes = [];
+    let particles = [];
+    let lastSpawn = 0;
+    
+    const TARGET_Y = canvas.height - 100; // Approximate position above buttons
+    const HIT_WINDOW = 60; // Pixels
+    
+    const COLORS = ['#F472B6', '#38BDF8', '#34D399', '#FBBF24'];
+    const KEYS = ['KeyD', 'KeyF', 'KeyJ', 'KeyK'];
+
+    function resetGame() {
+      score = 0;
+      combo = 0;
+      maxCombo = 0;
+      speed = 4;
+      notes = [];
+      particles = [];
+      scoreEl.textContent = '0';
+      comboEl.textContent = '0';
+      comboEl.className = 'val';
+    }
+
+    function spawnNote() {
+      const col = Math.floor(Math.random() * 4);
+      notes.push({
+        x: col,
+        y: -30,
+        hit: false,
+        active: true
+      });
+    }
+
+    function spawnParticles(col, y, color) {
+      const colWidth = canvas.width / 4;
+      const x = col * colWidth + colWidth / 2;
+      for(let i=0; i<10; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          size: Math.random() * 4 + 2,
+          life: 1,
+          color: color
+        });
+      }
+    }
+
+    function showFeedback(text, color) {
+      feedbackEl.textContent = text;
+      feedbackEl.style.color = color;
+      feedbackEl.classList.remove('show');
+      void feedbackEl.offsetWidth; // trigger reflow
+      feedbackEl.classList.add('show');
+    }
+
+    function hitNote(colIndex) {
+      if (!isPlaying) return;
+      
+      const btn = document.getElementById(`btn-${colIndex}`);
+      btn.classList.add('active');
+      setTimeout(() => btn.classList.remove('active'), 100);
+
+      // Find lowest active note in this column
+      let targetNote = null;
+      for (let i = 0; i < notes.length; i++) {
+        if (notes[i].x === colIndex && notes[i].active) {
+          targetNote = notes[i];
+          break; // First one is lowest
+        }
+      }
+
+      if (targetNote) {
+        const dist = Math.abs(targetNote.y - TARGET_Y);
+        if (dist < HIT_WINDOW) {
+          // Hit!
+          targetNote.active = false;
+          spawnParticles(colIndex, TARGET_Y, COLORS[colIndex]);
+          
+          let points = 0;
+          if (dist < 15) {
+            showFeedback('Perfect!', '#34D399');
+            points = 100;
+          } else if (dist < 35) {
+            showFeedback('Good', '#38BDF8');
+            points = 50;
+          } else {
+            showFeedback('Okay', '#a0a0b8');
+            points = 20;
+          }
+          
+          combo++;
+          if (combo > maxCombo) maxCombo = combo;
+          
+          score += points + (Math.floor(combo / 10) * 10);
+          scoreEl.textContent = score;
+          
+          comboEl.textContent = combo;
+          if (combo >= 20) comboEl.className = 'val high-combo';
+        } else if (targetNote.y > TARGET_Y - HIT_WINDOW*2) {
+          // Bad hit (too early)
+          targetNote.active = false;
+          combo = 0;
+          comboEl.textContent = combo;
+          comboEl.className = 'val';
+          showFeedback('Miss', '#EF4444');
+        }
+      }
+    }
+
+    // Input handlers
+    window.addEventListener('keydown', (e) => {
+      const idx = KEYS.indexOf(e.code);
+      if (idx !== -1 && !e.repeat) hitNote(idx);
+    });
+
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        hitNote(parseInt(btn.dataset.col));
+      });
+      btn.addEventListener('mousedown', (e) => {
+        hitNote(parseInt(btn.dataset.col));
+      });
+    });
+
+    startBtn.addEventListener('click', startGame);
+
+    function startGame() {
+      isPlaying = true;
+      overlay.classList.add('hidden');
+      resetGame();
+      lastSpawn = performance.now();
+      frameId = requestAnimationFrame(update);
+      
+      // End game after 60 seconds
+      setTimeout(gameOver, 60000);
+    }
+
+    function gameOver() {
+      isPlaying = false;
+      cancelAnimationFrame(frameId);
+      overlay.classList.remove('hidden');
+      overlayTitle.textContent = 'Song Finished!';
+      overlayTitle.style.color = '#38BDF8';
+      overlayDesc.innerHTML = `Score: <strong style="color:#F472B6">${score}</strong><br>Max Combo: <strong style="color:#34D399">${maxCombo}</strong>`;
+      startBtn.textContent = 'Play Again';
+    }
+
+    let lastTime = 0;
+    
+    function update(time) {
+      if (!isPlaying) return;
+      
+      const deltaTime = time - lastTime;
+      lastTime = time;
+
+      // Spawn notes based on simple rhythm
+      // Speed increases slightly over time
+      speed += 0.0005;
+      const spawnRate = Math.max(300, 1000 - (speed * 50)); 
+      
+      if (time - lastSpawn > spawnRate) {
+        if (Math.random() > 0.3) spawnNote(); // Don't spawn on every beat for rhythm feel
+        
+        // Sometimes spawn a double note
+        if (Math.random() > 0.8) {
+          setTimeout(spawnNote, 50);
+        }
+        
+        lastSpawn = time;
+      }
+
+      // Update notes
+      for (let i = notes.length - 1; i >= 0; i--) {
+        let note = notes[i];
+        note.y += speed;
+
+        if (note.active && note.y > canvas.height) {
+          // Missed note
+          note.active = false;
+          combo = 0;
+          comboEl.textContent = combo;
+          comboEl.className = 'val';
+          showFeedback('Miss', '#EF4444');
+        }
+
+        if (note.y > canvas.height + 50) {
+          notes.splice(i, 1);
+        }
+      }
+
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.03;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      draw();
+      frameId = requestAnimationFrame(update);
+    }
+
+    function draw() {
+      // Clear with slight trail effect
+      ctx.fillStyle = 'rgba(10, 10, 15, 0.4)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const colWidth = canvas.width / 4;
+
+      // Draw columns and target line
+      ctx.beginPath();
+      for (let i = 1; i < 4; i++) {
+        ctx.moveTo(i * colWidth, 0);
+        ctx.lineTo(i * colWidth, canvas.height);
+      }
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Target hit area
+      ctx.fillStyle = 'rgba(255,255,255,0.05)';
+      ctx.fillRect(0, TARGET_Y - 25, canvas.width, 50);
+      
+      ctx.beginPath();
+      ctx.moveTo(0, TARGET_Y);
+      ctx.lineTo(canvas.width, TARGET_Y);
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Draw active notes
+      notes.forEach(note => {
+        if (!note.active) return;
+        
+        const x = note.x * colWidth + colWidth / 2;
+        const color = COLORS[note.x];
+        
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        
+        ctx.beginPath();
+        // Draw slightly elongated rounded rect for note
+        ctx.roundRect(x - 30, note.y - 15, 60, 30, 15);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath();
+        ctx.roundRect(x - 20, note.y - 10, 40, 10, 5);
+        ctx.fill();
+      });
+
+      // Draw particles
+      particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+      ctx.globalAlpha = 1.0;
+    }
+
+    // Initial draw
+    draw();
+  </script>
+</body>
+</html>

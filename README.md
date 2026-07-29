@@ -214,6 +214,15 @@ This is a **static site** served from a web server at `games.eliyas.xyz`.
 | ❌ Tic Tac Toe | `tic-tac-toe/` | 🟢 Playable | Puzzle | Easy |
 | 🧩 Wordle | `wordle-clone/` | 🟢 Playable | Puzzle | Medium |
 | 🎪 Hangman | `hangman/` | 🟢 Playable | Puzzle | Medium |
+| 🟡 Connect Four | `connect-four/` | 🟢 Playable | Strategy | Medium |
+| 🧬 Game of Life | `life/` | 🟢 Playable | Simulation | Easy |
+| 🔢 Sudoku | `sudoku/` | 🟢 Playable | Puzzle | Hard |
+| 🏰 Tower Defense | `tower-defense/` | 🟢 Playable | Strategy | Hard |
+| 🎯 Reaction Time | `reaction-time/` | 🟢 Playable | Skill | Easy |
+| 🔤 Word Scramble | `word-scramble/` | 🟢 Playable | Puzzle | Easy |
+| 🏃 Endless Runner | `endless-runner/` | 🟢 Playable | Arcade | Medium |
+| 🎵 Rhythm Tap | `rhythm-tap/` | 🟢 Playable | Skill | Medium |
+| 🧮 Math Sprint | `math-sprint/` | 🟢 Playable | Quiz | Easy |
 
 ---
 

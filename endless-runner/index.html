@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Endless Runner — Jump and dodge obstacles in this auto-scrolling arcade game.">
+  <title>Endless Runner — Eliyas Games</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏃</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0f;
+      color: #f0f0f5;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      touch-action: none; /* Prevent scroll on touch devices */
+    }
+
+    .back-link {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      color: #a0a0b8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      z-index: 100;
+      transition: color 0.2s;
+      background: rgba(10, 10, 15, 0.7);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+    }
+    .back-link:hover { color: #f0f0f5; }
+
+    .game-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      height: 400px;
+      background: linear-gradient(180deg, #134E4A 0%, #0a0a0f 100%);
+      border: 2px solid rgba(20, 184, 166, 0.3);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(20, 184, 166, 0.1);
+    }
+
+    .score-display {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #14B8A6;
+      z-index: 10;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    .high-score {
+      position: absolute;
+      top: 1.2rem;
+      left: 1.5rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #a0a0b8;
+      z-index: 10;
+    }
+
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #14B8A6;
+      margin-bottom: 0.5rem;
+    }
+
+    .overlay p {
+      color: #a0a0b8;
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, #0D9488, #14B8A6);
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 2.5rem;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .start-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(20, 184, 166, 0.4); }
+
+    .controls-hint {
+      margin-top: 1.5rem;
+      color: #6b6b80;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 800px) {
+      .game-container {
+        border-left: none;
+        border-right: none;
+        border-radius: 0;
+        height: 60vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="https://games.eliyas.xyz" class="back-link">← Back to Games</a>
+
+  <div class="game-container">
+    <div class="high-score">HI <span id="hi-score">00000</span></div>
+    <div class="score-display"><span id="score">00000</span></div>
+    
+    <canvas id="game-canvas" width="800" height="400"></canvas>
+
+    <div class="overlay" id="start-overlay">
+      <h1 id="overlay-title">Endless Runner</h1>
+      <p id="overlay-desc">Jump over obstacles and survive!</p>
+      <button class="start-btn" id="start-btn">Start Game</button>
+      <div class="controls-hint">Space / Up / Click / Tap to Jump</div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    const startOverlay = document.getElementById('start-overlay');
+    const startBtn = document.getElementById('start-btn');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayDesc = document.getElementById('overlay-desc');
+    const scoreEl = document.getElementById('score');
+    const hiScoreEl = document.getElementById('hi-score');
+
+    // Game state
+    let isPlaying = false;
+    let score = 0;
+    let hiScore = localStorage.getItem('runner-hiscore') || 0;
+    let gameSpeed = 5;
+    let frameId;
+    
+    // Format score
+    hiScoreEl.textContent = String(hiScore).padStart(5, '0');
+
+    // Entities
+    const player = {
+      x: 50,
+      y: 300,
+      width: 40,
+      height: 40,
+      dy: 0,
+      jumpForce: 15,
+      originalHeight: 40,
+      grounded: false,
+      color: '#14B8A6'
+    };
+
+    const gravity = 0.8;
+    let obstacles = [];
+    let particles = [];
+    const floorY = 340;
+
+    function resetGame() {
+      player.y = floorY - player.height;
+      player.dy = 0;
+      obstacles = [];
+      particles = [];
+      score = 0;
+      gameSpeed = 5;
+      scoreEl.textContent = '00000';
+    }
+
+    function spawnObstacle() {
+      // Don't spawn if the last obstacle is too close
+      if (obstacles.length > 0 && canvas.width - obstacles[obstacles.length-1].x < 300) {
+        return;
+      }
+      
+      let type = Math.random();
+      let obstacle = { x: canvas.width, dx: gameSpeed, passed: false };
+      
+      if (type > 0.8) {
+        // High obstacle (need to duck or time carefully, but we only have jump)
+        // Let's just make different sized obstacles
+        obstacle.width = 30 + Math.random() * 20;
+        obstacle.height = 40 + Math.random() * 30;
+        obstacle.y = floorY - obstacle.height;
+        obstacle.color = '#EF4444';
+      } else {
+        // Normal obstacle
+        obstacle.width = 20 + Math.random() * 20;
+        obstacle.height = 30 + Math.random() * 20;
+        obstacle.y = floorY - obstacle.height;
+        obstacle.color = '#F59E0B';
+      }
+      obstacles.push(obstacle);
+    }
+
+    function spawnParticles(x, y, color) {
+      for(let i=0; i<5; i++) {
+        particles.push({
+          x: x + Math.random() * 20 - 10,
+          y: y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: Math.random() * -3 - 1,
+          size: Math.random() * 4 + 2,
+          life: 1,
+          color: color
+        });
+      }
+    }
+
+    function jump() {
+      if (player.grounded) {
+        player.dy = -player.jumpForce;
+        player.grounded = false;
+        spawnParticles(player.x + player.width/2, player.y + player.height, '#14B8A6');
+      }
+    }
+
+    // Input handling
+    window.addEventListener('keydown', (e) => {
+      if ((e.code === 'Space' || e.code === 'ArrowUp') && !e.repeat) {
+        if (!isPlaying) startGame();
+        else jump();
+      }
+    });
+
+    canvas.addEventListener('mousedown', () => {
+      if (isPlaying) jump();
+    });
+    
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (isPlaying) jump();
+    }, {passive: false});
+
+    startBtn.addEventListener('click', startGame);
+
+    function startGame() {
+      if (isPlaying) return;
+      isPlaying = true;
+      startOverlay.classList.add('hidden');
+      resetGame();
+      lastTime = performance.now();
+      frameId = requestAnimationFrame(update);
+    }
+
+    function gameOver() {
+      isPlaying = false;
+      cancelAnimationFrame(frameId);
+      
+      if (Math.floor(score) > hiScore) {
+        hiScore = Math.floor(score);
+        localStorage.setItem('runner-hiscore', hiScore);
+        hiScoreEl.textContent = String(hiScore).padStart(5, '0');
+      }
+      
+      startOverlay.classList.remove('hidden');
+      overlayTitle.textContent = 'Game Over!';
+      overlayTitle.style.color = '#EF4444';
+      overlayDesc.innerHTML = `Score: <strong style="color:#14B8A6">${Math.floor(score)}</strong>`;
+      startBtn.textContent = 'Play Again';
+      
+      // Explosion effect
+      for(let i=0; i<20; i++) {
+        spawnParticles(player.x + player.width/2, player.y + player.height/2, '#EF4444');
+      }
+      draw(); // Draw final state with particles
+    }
+
+    let lastTime = 0;
+    
+    function update(time) {
+      if (!isPlaying) return;
+      
+      const deltaTime = time - lastTime;
+      lastTime = time;
+
+      // Update Player
+      player.dy += gravity;
+      player.y += player.dy;
+
+      if (player.y + player.height >= floorY) {
+        player.y = floorY - player.height;
+        player.dy = 0;
+        if (!player.grounded) {
+          // Just landed
+          spawnParticles(player.x + player.width/2, floorY, 'rgba(255,255,255,0.3)');
+        }
+        player.grounded = true;
+      } else {
+        player.grounded = false;
+      }
+
+      // Spawn Obstacles
+      if (Math.random() < 0.015 + (gameSpeed * 0.001)) {
+        spawnObstacle();
+      }
+
+      // Update Obstacles & Collision
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.x -= gameSpeed;
+
+        // Collision Check (AABB)
+        if (
+          player.x < obs.x + obs.width &&
+          player.x + player.width > obs.x &&
+          player.y < obs.y + obs.height &&
+          player.y + player.height > obs.y
+        ) {
+          // Make hit box slightly smaller for fairer gameplay
+          let padding = 5;
+          if (
+            player.x + padding < obs.x + obs.width - padding &&
+            player.x + player.width - padding > obs.x + padding &&
+            player.y + padding < obs.y + obs.height - padding &&
+            player.y + player.height - padding > obs.y + padding
+          ) {
+            gameOver();
+            return;
+          }
+        }
+
+        if (obs.x + obs.width < 0) {
+          obstacles.splice(i, 1);
+        }
+      }
+
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.05;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      // Score and Difficulty
+      score += 0.1 * (gameSpeed / 5);
+      gameSpeed += 0.001; // Slowly increase speed
+      scoreEl.textContent = String(Math.floor(score)).padStart(5, '0');
+
+      draw();
+      frameId = requestAnimationFrame(update);
+    }
+
+    function draw() {
+      // Clear
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Floor line
+      ctx.beginPath();
+      ctx.moveTo(0, floorY);
+      ctx.lineTo(canvas.width, floorY);
+      ctx.strokeStyle = 'rgba(20, 184, 166, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw grid lines below floor
+      ctx.beginPath();
+      for(let i=0; i<canvas.width; i+=40) {
+        let offset = (score * 10) % 40;
+        ctx.moveTo(i - offset, floorY);
+        ctx.lineTo(i - offset - 20, canvas.height);
+      }
+      ctx.strokeStyle = 'rgba(20, 184, 166, 0.1)';
+      ctx.stroke();
+
+      // Draw Obstacles
+      obstacles.forEach(obs => {
+        ctx.fillStyle = obs.color;
+        // Add neon glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = obs.color;
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        
+        // Inner highlight
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillRect(obs.x, obs.y, 5, obs.height);
+      });
+
+      // Draw Player
+      ctx.fillStyle = player.color;
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.shadowBlur = 0;
+      
+      // Player eye
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fillRect(player.x + player.width - 12, player.y + 8, 6, 6);
+
+      // Draw Particles
+      particles.forEach(p => {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1.0;
+    }
+
+    // Initial draw
+    draw();
+  </script>
+</body>
+</html>
