@@ -138,11 +138,16 @@
       const escapeHtml = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
       if (game) {
-        const validNames = ['snake','tetris','pong','minesweeper','memory-match','2048','rock-paper-scissors','typing-speed','roll-a-dice','flip-a-coin','draw-a-card','space-invaders','flappy-clone','tic-tac-toe','wordle-clone','hangman','trivia-quiz','idle-clicker','asteroids','15-puzzle','blackjack','solitaire','simon-says'];
+        const validNames = [
+          'snake', 'tetris', 'pong', 'minesweeper', 'memory-match', '2048', 'rock-paper-scissors', 'typing-speed', 'roll-a-dice', 'flip-a-coin', 
+          'draw-a-card', 'space-invaders', 'flappy-clone', 'tic-tac-toe', 'wordle-clone', 'hangman', 'trivia-quiz', 'idle-clicker', 'asteroids', 
+          '15-puzzle', 'blackjack', 'solitaire', 'simon-says', 'connect-four', 'life', 'sudoku', 'tower-defense', 'reaction-time', 'word-scramble', 
+          'endless-runner', 'rhythm-tap', 'math-sprint'
+        ];
         const slug = validNames.find(n => n.toLowerCase() === game.toLowerCase());
 
         if (slug) {
-          const src = '/' + slug + '/';
+          const src = './' + slug + '/';
           iframe.src = src;
           nameEl.textContent = validNames.find(n => n.toLowerCase() === slug) || slug;
         } else {
